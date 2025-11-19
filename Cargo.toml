@@ -1,0 +1,58 @@
+[workspace]
+resolver = "2"
+members = [
+    "router-core",
+    "router-ffi",
+    "router-wasm",
+    "router-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Ruvector Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ruvnet/ruvector"
+homepage = "https://github.com/ruvnet/ruvector"
+documentation = "https://docs.rs/ruvector"
+keywords = ["vector-database", "hnsw", "embeddings", "ai", "rust"]
+categories = ["database", "algorithms", "science"]
+
+[workspace.dependencies]
+# Core functionality
+redb = "2.1"
+memmap2 = "0.9"
+rayon = "1.10"
+crossbeam = "0.8"
+parking_lot = "0.12"
+
+# Serialization
+rkyv = { version = "0.7", features = ["validation"] }
+bincode = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Distance metrics and SIMD
+simsimd = "6.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Testing and benchmarking
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.4"
+
+# Async runtime (optional)
+tokio = { version = "1.40", features = ["rt-multi-thread", "sync", "time"] }
+
+# NAPI-RS for Node.js bindings
+napi = { version = "2.16", features = ["async", "napi8"] }
+napi-derive = "2.16"
+
+# WASM
+wasm-bindgen = "0.2"

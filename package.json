@@ -1,0 +1,73 @@
+{
+  "name": "ruvector",
+  "version": "0.1.0",
+  "description": "High-performance Rust-native vector database with AgenticDB API compatibility",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "ruvector",
+    "triples": {
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-linux-android",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl",
+        "aarch64-pc-windows-msvc",
+        "armv7-unknown-linux-gnueabihf",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl",
+        "x86_64-pc-windows-msvc",
+        "x86_64-apple-darwin"
+      ]
+    }
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "bench": "cargo bench --package router-core",
+    "build": "napi build --platform --release --package router-ffi",
+    "build:debug": "napi build --platform --package router-ffi",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "cargo test",
+    "version": "napi version",
+    "cli": "cargo run --package router-cli --release --"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0"
+  },
+  "keywords": [
+    "vector-database",
+    "hnsw",
+    "embeddings",
+    "ai",
+    "rust",
+    "machine-learning",
+    "semantic-search",
+    "similarity-search",
+    "agenticdb",
+    "vector-search"
+  ],
+  "author": "Ruvector Contributors",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/ruvector.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ruvnet/ruvector/issues"
+  },
+  "homepage": "https://github.com/ruvnet/ruvector#readme",
+  "engines": {
+    "node": ">= 14"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "optionalDependencies": {
+    "@ruvector/darwin-arm64": "0.1.0",
+    "@ruvector/darwin-x64": "0.1.0",
+    "@ruvector/linux-x64-gnu": "0.1.0",
+    "@ruvector/linux-x64-musl": "0.1.0",
+    "@ruvector/win32-x64-msvc": "0.1.0"
+  }
+}

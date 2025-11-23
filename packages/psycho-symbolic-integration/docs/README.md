@@ -31,7 +31,7 @@ This package provides seamless integration between:
 
 ```bash
 # Core integration package
-npm install @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-integration
 
 # Required dependencies
 npm install psycho-symbolic-reasoner @ruvector/agentic-synth
@@ -45,7 +45,7 @@ npm install ruvector
 ### Basic Usage
 
 ```typescript
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 // Initialize with all components
 const system = await quickStart(process.env.GEMINI_API_KEY);
@@ -127,7 +127,7 @@ console.log(`Estimated quality: ${plan.estimatedQuality}`);
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│   @ruvector/psycho-symbolic-integration API         │
+│   psycho-symbolic-integration API         │
 ├────────────────┬────────────────┬───────────────────┤
 │   Psycho-      │   Agentic-     │   Ruvector        │
 │   Symbolic     │   Synth        │   Adapter         │
@@ -237,7 +237,7 @@ const trainingData = await system.generateIntelligently('structured', {
 ## 🔧 Advanced Configuration
 
 ```typescript
-import { IntegratedPsychoSymbolicSystem } from '@ruvector/psycho-symbolic-integration';
+import { IntegratedPsychoSymbolicSystem } from 'psycho-symbolic-integration';
 
 const system = new IntegratedPsychoSymbolicSystem({
   // Reasoner config
@@ -299,5 +299,5 @@ MIT © ruvnet
 **Experience the future of AI reasoning and data generation!** 🚀
 
 ```bash
-npm install @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-integration
 ```

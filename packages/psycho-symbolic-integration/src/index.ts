@@ -1,5 +1,5 @@
 /**
- * @ruvector/psycho-symbolic-integration
+ * psycho-symbolic-integration
  *
  * Unified integration layer combining:
  * - psycho-symbolic-reasoner: Ultra-fast symbolic AI reasoning (0.3ms queries)

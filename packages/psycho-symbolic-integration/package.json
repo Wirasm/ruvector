@@ -1,5 +1,5 @@
 {
-  "name": "@ruvector/psycho-symbolic-integration",
+  "name": "psycho-symbolic-integration",
   "version": "0.1.0",
   "description": "Integration layer combining psycho-symbolic-reasoner with ruvector and agentic-synth for advanced AI reasoning and data generation",
   "main": "./dist/index.js",
@@ -58,9 +58,6 @@
     "url": "https://github.com/ruvnet/ruvector/issues"
   },
   "homepage": "https://github.com/ruvnet/ruvector#readme",
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
     "dist",
     "src",

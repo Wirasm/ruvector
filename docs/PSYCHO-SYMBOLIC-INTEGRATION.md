@@ -30,13 +30,13 @@ Psycho-symbolic reasoning combines:
 npm install psycho-symbolic-reasoner
 
 # Install integration package
-npm install @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-integration
 ```
 
 ### Basic Usage
 
 ```typescript
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 // Initialize integrated system
 const system = await quickStart(process.env.GEMINI_API_KEY);
@@ -69,7 +69,7 @@ const result = await system.generateIntelligently('structured', {
 ```typescript
 import { AgenticSynth } from '@ruvector/agentic-synth';
 import { PsychoSymbolicReasoner } from 'psycho-symbolic-reasoner';
-import { AgenticSynthAdapter } from '@ruvector/psycho-symbolic-integration/adapters';
+import { AgenticSynthAdapter } from 'psycho-symbolic-integration/adapters';
 
 const reasoner = new PsychoSymbolicReasoner();
 const synth = new AgenticSynth();
@@ -94,7 +94,7 @@ console.log(`Sentiment match: ${result.psychoMetrics.sentimentMatch}`);
 
 ```typescript
 import { Ruvector } from 'ruvector';
-import { RuvectorAdapter } from '@ruvector/psycho-symbolic-integration/adapters';
+import { RuvectorAdapter } from 'psycho-symbolic-integration/adapters';
 
 const reasoner = new PsychoSymbolicReasoner();
 const vectorAdapter = new RuvectorAdapter(reasoner, {
@@ -129,7 +129,7 @@ results.forEach(r => {
 **All three systems working together**:
 
 ```typescript
-import { IntegratedPsychoSymbolicSystem } from '@ruvector/psycho-symbolic-integration';
+import { IntegratedPsychoSymbolicSystem } from 'psycho-symbolic-integration';
 
 const system = new IntegratedPsychoSymbolicSystem({
   reasoner: {
@@ -264,7 +264,7 @@ const plan = await system.reasoner.plan({
 ## 🔗 Links
 
 - **Psycho-Symbolic Reasoner**: [npm](https://www.npmjs.com/package/psycho-symbolic-reasoner)
-- **Integration Package**: [@ruvector/psycho-symbolic-integration](../packages/psycho-symbolic-integration)
+- **Integration Package**: [psycho-symbolic-integration](../packages/psycho-symbolic-integration)
 - **Agentic-Synth**: [@ruvector/agentic-synth](../packages/agentic-synth)
 - **Ruvector**: [Main repo](https://github.com/ruvnet/ruvector)
 
@@ -272,7 +272,7 @@ const plan = await system.reasoner.plan({
 
 ```bash
 # Install dependencies
-npm install psycho-symbolic-reasoner @ruvector/agentic-synth @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-reasoner @ruvector/agentic-synth psycho-symbolic-integration
 
 # Run the complete integration example
 cd packages/psycho-symbolic-integration

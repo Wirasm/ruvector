@@ -1,4 +1,4 @@
-# 🧠 @ruvector/psycho-symbolic-integration
+# 🧠 psycho-symbolic-integration
 
 **Revolutionary Integration: 100x Faster AI Reasoning + Intelligent Data Generation**
 
@@ -11,7 +11,7 @@ Seamlessly combine three powerful AI systems:
 
 ```bash
 # Install
-npm install @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-integration
 
 # Required dependencies
 npm install psycho-symbolic-reasoner @ruvector/agentic-synth
@@ -21,7 +21,7 @@ npm install ruvector
 ```
 
 ```typescript
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 // Initialize integrated system
 const system = await quickStart(process.env.GEMINI_API_KEY);

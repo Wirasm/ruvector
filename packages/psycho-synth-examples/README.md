@@ -1,4 +1,4 @@
-# 🧠 @ruvector/psycho-synth-examples
+# 🧠 psycho-synth-examples
 
 **Advanced Psycho-Symbolic Reasoning Examples: Real-World Applications**
 
@@ -28,7 +28,7 @@ Comprehensive examples demonstrating the power of combining ultra-fast psycho-sy
 ### Installation
 
 ```bash
-npm install @ruvector/psycho-synth-examples
+npm install psycho-synth-examples
 ```
 
 ### Run Examples
@@ -293,7 +293,7 @@ Population Psychological Health:
 ### Programmatic Access
 
 ```typescript
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 const system = await quickStart(process.env.GEMINI_API_KEY);
 
@@ -346,7 +346,7 @@ OPENROUTER_API_KEY=your_openrouter_key
 ### Example Configuration
 
 ```typescript
-import { IntegratedPsychoSymbolicSystem } from '@ruvector/psycho-symbolic-integration';
+import { IntegratedPsychoSymbolicSystem } from 'psycho-symbolic-integration';
 
 const system = new IntegratedPsychoSymbolicSystem({
   reasoner: {

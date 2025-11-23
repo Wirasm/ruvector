@@ -10,7 +10,7 @@ Successfully installed and integrated **psycho-symbolic-reasoner** with the Ruve
 
 ## 📦 New Package Created
 
-### @ruvector/psycho-symbolic-integration
+### psycho-symbolic-integration
 
 Location: `/home/user/ruvector/packages/psycho-symbolic-integration/`
 
@@ -216,7 +216,7 @@ const plan = await system.planDataGeneration(
 
 3. **Build Your Integration**:
    ```typescript
-   import { quickStart } from '@ruvector/psycho-symbolic-integration';
+   import { quickStart } from 'psycho-symbolic-integration';
    const system = await quickStart(API_KEY);
    ```
 

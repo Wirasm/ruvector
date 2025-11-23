@@ -9,7 +9,7 @@
  * - ROI prediction based on psychological profiles
  */
 
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 async function optimizeMarketingCampaigns() {
   console.log('📢 Marketing Campaign Optimization with Psycho-Symbolic AI\n');

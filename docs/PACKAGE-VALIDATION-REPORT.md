@@ -1,14 +1,14 @@
 # 📊 Package Validation Report
 
 **Date**: 2025-11-23
-**Packages**: @ruvector/psycho-symbolic-integration, @ruvector/psycho-synth-examples
+**Packages**: psycho-symbolic-integration, psycho-synth-examples
 **Status**: ✅ **READY FOR PUBLISHING**
 
 ## Executive Summary
 
 Both packages have been validated and are ready for npm publication. All critical requirements are met, package metadata is complete, and functionality has been tested.
 
-## Package 1: @ruvector/psycho-symbolic-integration
+## Package 1: psycho-symbolic-integration
 
 ### ✅ Validation Results
 
@@ -42,7 +42,7 @@ Total: 6 files, 32.7 KB unpacked, 9.3 KB tarball
 
 ```json
 {
-  "name": "@ruvector/psycho-symbolic-integration",
+  "name": "psycho-symbolic-integration",
   "version": "0.1.0",
   "description": "Integration layer combining psycho-symbolic-reasoner with ruvector and agentic-synth",
   "main": "./dist/index.js",
@@ -66,7 +66,7 @@ psycho-symbolic, reasoning, ruvector, agentic-synth, ai, vector-database, synthe
 
 ---
 
-## Package 2: @ruvector/psycho-synth-examples
+## Package 2: psycho-synth-examples
 
 ### ✅ Validation Results
 
@@ -109,7 +109,7 @@ Total: 11 files, 112.7 KB unpacked, 26.9 KB tarball
 
 ```json
 {
-  "name": "@ruvector/psycho-synth-examples",
+  "name": "psycho-synth-examples",
   "version": "0.1.0",
   "description": "Advanced psycho-symbolic reasoning examples: audience analysis, voter sentiment, marketing optimization, financial insights, medical patient analysis, and exotic psychological profiling",
   "bin": {
@@ -196,14 +196,14 @@ Status: ✅ PASS
 
 Both packages successfully pass `npm pack --dry-run`:
 
-**@ruvector/psycho-symbolic-integration**
+**psycho-symbolic-integration**
 - ✅ Tarball size: 9.3 KB
 - ✅ Unpacked size: 32.7 KB
 - ✅ Total files: 6
 - ✅ All expected files included
 - ✅ No extraneous files
 
-**@ruvector/psycho-synth-examples**
+**psycho-synth-examples**
 - ✅ Tarball size: 26.9 KB
 - ✅ Unpacked size: 112.7 KB
 - ✅ Total files: 11
@@ -335,11 +335,11 @@ cd ../psycho-synth-examples
 npm publish --access public
 
 # Verify publication
-npm view @ruvector/psycho-symbolic-integration
-npm view @ruvector/psycho-synth-examples
+npm view psycho-symbolic-integration
+npm view psycho-synth-examples
 
 # Test npx
-npx @ruvector/psycho-synth-examples list
+npx psycho-synth-examples list
 npx psycho-synth-examples list
 ```
 
@@ -374,7 +374,7 @@ npx psycho-synth-examples list
 
 **Status**: ✅ **BOTH PACKAGES READY FOR PUBLISHING**
 
-Both `@ruvector/psycho-symbolic-integration` and `@ruvector/psycho-synth-examples` have passed all validation checks and are ready for immediate publication to npm.
+Both `psycho-symbolic-integration` and `psycho-synth-examples` have passed all validation checks and are ready for immediate publication to npm.
 
 ### Key Achievements
 

@@ -10,7 +10,7 @@
  * - Campaign message optimization
  */
 
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 interface Voter {
   id: string;

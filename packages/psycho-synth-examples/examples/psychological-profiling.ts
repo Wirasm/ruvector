@@ -13,7 +13,7 @@
  * - Synthetic psychological persona generation
  */
 
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 async function performExoticPsychologicalProfiling() {
   console.log('🧠 Exotic Psychological Profiling with AI\n');

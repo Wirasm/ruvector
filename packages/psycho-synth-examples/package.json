@@ -1,5 +1,5 @@
 {
-  "name": "@ruvector/psycho-synth-examples",
+  "name": "psycho-synth-examples",
   "version": "0.1.0",
   "description": "Advanced psycho-symbolic reasoning examples: audience analysis, voter sentiment, marketing optimization, financial insights, medical patient analysis, and exotic psychological profiling",
   "main": "./dist/index.js",
@@ -22,7 +22,7 @@
     "example:all": "npm run example:audience && npm run example:voter && npm run example:marketing && npm run example:financial && npm run example:medical && npm run example:psychological"
   },
   "dependencies": {
-    "@ruvector/psycho-symbolic-integration": "^0.1.0",
+    "psycho-symbolic-integration": "^0.1.0",
     "@ruvector/agentic-synth": "^0.1.0",
     "psycho-symbolic-reasoner": "^1.0.7",
     "commander": "^11.1.0",
@@ -60,9 +60,6 @@
     "url": "https://github.com/ruvnet/ruvector/issues"
   },
   "homepage": "https://github.com/ruvnet/ruvector/tree/main/packages/psycho-synth-examples#readme",
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
     "dist",
     "bin",

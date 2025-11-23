@@ -10,7 +10,7 @@
  * - Trading psychology insights
  */
 
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 async function analyzeFinancialSentiment() {
   console.log('💹 Financial Sentiment & Risk Analysis\n');

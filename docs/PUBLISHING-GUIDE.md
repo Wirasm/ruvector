@@ -1,6 +1,6 @@
 # 📦 Publishing Guide - Psycho-Symbolic Packages
 
-Complete guide for publishing `@ruvector/psycho-symbolic-integration` and `@ruvector/psycho-synth-examples` to npm.
+Complete guide for publishing `psycho-symbolic-integration` and `psycho-synth-examples` to npm.
 
 ## 📋 Pre-Publishing Checklist
 
@@ -8,7 +8,7 @@ Complete guide for publishing `@ruvector/psycho-symbolic-integration` and `@ruve
 
 Both packages have been validated and are **ready for publishing**:
 
-**@ruvector/psycho-symbolic-integration**
+**psycho-symbolic-integration**
 - ✅ package.json configured
 - ✅ README.md (2.8 KB)
 - ✅ LICENSE included
@@ -18,7 +18,7 @@ Both packages have been validated and are **ready for publishing**:
 - ✅ publishConfig.access: public
 - ✅ npm pack dry-run passed (32.7 KB unpacked)
 
-**@ruvector/psycho-synth-examples**
+**psycho-synth-examples**
 - ✅ package.json configured
 - ✅ README.md (10.4 KB comprehensive)
 - ✅ LICENSE included
@@ -64,7 +64,7 @@ cd ../psycho-synth-examples
 npm pack --dry-run
 ```
 
-### Step 3: Publish @ruvector/psycho-symbolic-integration
+### Step 3: Publish psycho-symbolic-integration
 
 ```bash
 cd /home/user/ruvector/packages/psycho-symbolic-integration
@@ -76,10 +76,10 @@ npm run build
 npm publish --access public
 
 # Expected output:
-# + @ruvector/psycho-symbolic-integration@0.1.0
+# + psycho-symbolic-integration@0.1.0
 ```
 
-### Step 4: Publish @ruvector/psycho-synth-examples
+### Step 4: Publish psycho-synth-examples
 
 ```bash
 cd /home/user/ruvector/packages/psycho-synth-examples
@@ -91,20 +91,20 @@ npm run build
 npm publish --access public
 
 # Expected output:
-# + @ruvector/psycho-synth-examples@0.1.0
+# + psycho-synth-examples@0.1.0
 ```
 
 ### Step 5: Verify Publication
 
 ```bash
 # Check psycho-symbolic-integration
-npm view @ruvector/psycho-symbolic-integration
+npm view psycho-symbolic-integration
 
 # Check psycho-synth-examples
-npm view @ruvector/psycho-synth-examples
+npm view psycho-synth-examples
 
 # Test npx command
-npx @ruvector/psycho-synth-examples list
+npx psycho-synth-examples list
 # or
 npx psycho-synth-examples list
 ```
@@ -148,7 +148,7 @@ npm publish --access public
 
 ## 📦 Package Contents
 
-### @ruvector/psycho-symbolic-integration (32.7 KB)
+### psycho-symbolic-integration (32.7 KB)
 
 Includes:
 - `LICENSE` (1.1 KB)
@@ -160,7 +160,7 @@ Includes:
 
 **Total: 6 files**
 
-### @ruvector/psycho-synth-examples (112.7 KB)
+### psycho-synth-examples (112.7 KB)
 
 Includes:
 - `LICENSE` (1.1 KB)
@@ -188,13 +188,13 @@ cd /tmp/test-psycho-synth
 npm init -y
 
 # Install integration package
-npm install @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-integration
 
 # Install examples package
-npm install @ruvector/psycho-synth-examples
+npm install psycho-synth-examples
 
 # Test programmatic API
-node -e "const pkg = require('@ruvector/psycho-symbolic-integration'); console.log(pkg)"
+node -e "const pkg = require('psycho-symbolic-integration'); console.log(pkg)"
 
 # Test CLI
 npx psycho-synth-examples list
@@ -205,7 +205,7 @@ npx psycho-synth-examples --help
 
 ```bash
 # Test without installation (npx will download temporarily)
-npx @ruvector/psycho-synth-examples list
+npx psycho-synth-examples list
 npx psycho-synth-examples list
 npx pse list  # Short alias
 
@@ -217,10 +217,10 @@ npx psycho-synth-examples run audience
 
 ## 📊 Expected npm Registry Info
 
-### @ruvector/psycho-symbolic-integration
+### psycho-symbolic-integration
 
 ```
-Package: @ruvector/psycho-symbolic-integration
+Package: psycho-symbolic-integration
 Version: 0.1.0
 License: MIT
 Description: Integration layer combining psycho-symbolic-reasoner with ruvector and agentic-synth
@@ -231,10 +231,10 @@ Issues: https://github.com/ruvnet/ruvector/issues
 
 **Keywords:** psycho-symbolic, reasoning, ruvector, agentic-synth, ai, vector-database, synthetic-data, integration
 
-### @ruvector/psycho-synth-examples
+### psycho-synth-examples
 
 ```
-Package: @ruvector/psycho-synth-examples
+Package: psycho-synth-examples
 Version: 0.1.0
 License: MIT
 Description: Advanced psycho-symbolic reasoning examples: audience analysis, voter sentiment, marketing optimization, financial insights, medical patient analysis, and exotic psychological profiling
@@ -258,11 +258,11 @@ Add installation badges and links:
 ```markdown
 ## Packages
 
-### @ruvector/psycho-symbolic-integration
-[![npm version](https://badge.fury.io/js/@ruvector%2Fpsycho-symbolic-integration.svg)](https://www.npmjs.com/package/@ruvector/psycho-symbolic-integration)
+### psycho-symbolic-integration
+[![npm version](https://badge.fury.io/js/@ruvector%2Fpsycho-symbolic-integration.svg)](https://www.npmjs.com/package/psycho-symbolic-integration)
 
-### @ruvector/psycho-synth-examples
-[![npm version](https://badge.fury.io/js/@ruvector%2Fpsycho-synth-examples.svg)](https://www.npmjs.com/package/@ruvector/psycho-synth-examples)
+### psycho-synth-examples
+[![npm version](https://badge.fury.io/js/@ruvector%2Fpsycho-synth-examples.svg)](https://www.npmjs.com/package/psycho-synth-examples)
 ```
 
 ### 2. Create GitHub Release
@@ -273,7 +273,7 @@ git tag -a v0.1.0 -m "Release v0.1.0: Psycho-Symbolic Integration"
 git push origin v0.1.0
 
 # Create GitHub release via web UI or gh CLI
-gh release create v0.1.0 --title "v0.1.0: Psycho-Symbolic Integration" --notes "Initial release of @ruvector/psycho-symbolic-integration and @ruvector/psycho-synth-examples"
+gh release create v0.1.0 --title "v0.1.0: Psycho-Symbolic Integration" --notes "Initial release of psycho-symbolic-integration and psycho-synth-examples"
 ```
 
 ### 3. Announce Release
@@ -290,12 +290,12 @@ Sample announcement:
 ```
 🚀 Just published two new npm packages!
 
-@ruvector/psycho-symbolic-integration
+psycho-symbolic-integration
 - 500x faster sentiment analysis (0.4ms vs GPT-4's 200ms)
 - Psychologically-guided synthetic data generation
 - Hybrid symbolic+vector reasoning
 
-@ruvector/psycho-synth-examples
+psycho-synth-examples
 - 6 production-ready examples
 - Audience analysis, voter sentiment, marketing optimization
 - Financial analysis, medical insights, psychological profiling
@@ -308,7 +308,7 @@ Try it: npx psycho-synth-examples list
 ### 4. Monitor Package Stats
 
 - npm downloads: https://npmcharts.com
-- npm trends: https://www.npmtrends.com/@ruvector/psycho-synth-examples
+- npm trends: https://www.npmtrends.com/psycho-synth-examples
 - Package phobia: https://packagephobia.com
 
 ## 🔧 Troubleshooting
@@ -368,7 +368,7 @@ If `@ruvector` scope is not available, you may need to:
 If you need to deprecate a version:
 
 ```bash
-npm deprecate @ruvector/psycho-synth-examples@0.1.0 "Use version 0.2.0 or later"
+npm deprecate psycho-synth-examples@0.1.0 "Use version 0.2.0 or later"
 ```
 
 ### Unpublishing (Use Sparingly!)
@@ -377,10 +377,10 @@ npm allows unpublishing within 72 hours:
 
 ```bash
 # Unpublish specific version
-npm unpublish @ruvector/psycho-synth-examples@0.1.0
+npm unpublish psycho-synth-examples@0.1.0
 
 # Unpublish entire package (dangerous!)
-npm unpublish @ruvector/psycho-synth-examples --force
+npm unpublish psycho-synth-examples --force
 ```
 
 ⚠️ **Warning**: Unpublishing can break dependent projects. Only do this for critical security issues.

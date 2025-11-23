@@ -1,5 +1,5 @@
 /**
- * @ruvector/psycho-synth-examples
+ * psycho-synth-examples
  *
  * Advanced Psycho-Symbolic Reasoning Examples
  *
@@ -11,7 +11,7 @@
  * - Real-world applications across 6 domains
  */
 
-export * from '@ruvector/psycho-symbolic-integration';
+export * from 'psycho-symbolic-integration';
 
 // Example metadata for programmatic access
 export const examples = [

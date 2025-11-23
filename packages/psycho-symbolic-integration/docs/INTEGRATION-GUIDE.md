@@ -21,7 +21,7 @@
 
 ```bash
 # Install the integration package
-npm install @ruvector/psycho-symbolic-integration
+npm install psycho-symbolic-integration
 
 # Core dependencies (required)
 npm install psycho-symbolic-reasoner @ruvector/agentic-synth
@@ -103,7 +103,7 @@ User Input
 **Use Case**: Generate content with specific emotional tone
 
 ```typescript
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 const system = await quickStart();
 

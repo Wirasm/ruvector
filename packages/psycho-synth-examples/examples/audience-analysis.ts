@@ -9,7 +9,7 @@
  * - Synthetic audience data generation
  */
 
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 interface AudienceMember {
   id: string;

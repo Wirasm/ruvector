@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **@ruvector/psycho-synth-examples** package demonstrates the integration of ultra-fast psycho-symbolic reasoning with AI-powered synthetic data generation across 6 real-world domains.
+The **psycho-synth-examples** package demonstrates the integration of ultra-fast psycho-symbolic reasoning with AI-powered synthetic data generation across 6 real-world domains.
 
 ## ⚡ Key Performance Metrics
 
@@ -207,7 +207,7 @@ export OPENROUTER_API_KEY="your-openrouter-key"
 ## 💻 Programmatic API Usage
 
 ```typescript
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 // Initialize system
 const system = await quickStart(process.env.GEMINI_API_KEY);

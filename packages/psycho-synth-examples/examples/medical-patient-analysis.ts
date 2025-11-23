@@ -13,7 +13,7 @@
  * Not for clinical diagnosis or treatment decisions
  */
 
-import { quickStart } from '@ruvector/psycho-symbolic-integration';
+import { quickStart } from 'psycho-symbolic-integration';
 
 async function analyzePatientPsychology() {
   console.log('🏥 Medical Patient Psychological Analysis\n');

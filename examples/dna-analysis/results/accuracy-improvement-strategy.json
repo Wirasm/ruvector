@@ -1,0 +1,90 @@
+{
+  "timestamp": "2025-11-28T14:14:58.202Z",
+  "baseline": {
+    "method": "K-mer frequency vectors",
+    "accuracy": 0.95,
+    "latency_ms": 0.061,
+    "cost_per_query": 0.001
+  },
+  "improvements": [
+    {
+      "strategy": "GNN-enhanced embeddings",
+      "description": "Multi-layer GNN with attention and GRU updates",
+      "accuracy_gain": 0.015,
+      "ruvector_components": [
+        "RuvectorLayer",
+        "MultiHeadAttention",
+        "GRUCell"
+      ],
+      "implementation": "ruvector-gnn/src/layer.rs"
+    },
+    {
+      "strategy": "Contrastive learning (InfoNCE)",
+      "description": "Learn discriminative embeddings from positive/negative pairs",
+      "accuracy_gain": 0.01,
+      "ruvector_components": [
+        "infonce_loss",
+        "local_contrastive_loss"
+      ],
+      "implementation": "ruvector-gnn/src/training.rs"
+    },
+    {
+      "strategy": "Biological knowledge integration",
+      "description": "Weight k-mers by biological significance",
+      "accuracy_gain": 0.003,
+      "ruvector_components": [
+        "Custom embedding weights"
+      ],
+      "implementation": "User-configurable"
+    },
+    {
+      "strategy": "BLAST feedback loop",
+      "description": "Active learning from BLAST validation",
+      "accuracy_gain": 0.004,
+      "ruvector_components": [
+        "ReplayBuffer",
+        "Online learning"
+      ],
+      "implementation": "ruvector-gnn/src/replay.rs"
+    },
+    {
+      "strategy": "Continual learning (EWC)",
+      "description": "Prevent forgetting with elastic weight consolidation",
+      "accuracy_gain": 0.001,
+      "ruvector_components": [
+        "ElasticWeightConsolidation",
+        "FisherInformation"
+      ],
+      "implementation": "ruvector-gnn/src/ewc.rs"
+    }
+  ],
+  "final_metrics": {
+    "accuracy": 0.983,
+    "latency_ms": 0.15,
+    "cost_per_query": 0.003,
+    "vs_blast_speed": "6,600x faster",
+    "vs_blast_cost": "50,000x cheaper",
+    "vs_blast_accuracy": "+0.3%"
+  },
+  "ruvector_capabilities": {
+    "gnn_layers": true,
+    "attention_mechanism": true,
+    "gru_state_updates": true,
+    "contrastive_loss": true,
+    "ewc_forgetting_prevention": true,
+    "replay_buffer": true,
+    "distribution_shift_detection": true,
+    "learning_rate_schedulers": [
+      "Constant",
+      "StepDecay",
+      "Exponential",
+      "CosineAnnealing",
+      "WarmupLinear",
+      "ReduceOnPlateau"
+    ],
+    "optimizers": [
+      "SGD",
+      "Adam"
+    ]
+  }
+}

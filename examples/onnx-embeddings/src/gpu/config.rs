@@ -6,9 +6,10 @@
 use serde::{Deserialize, Serialize};
 
 /// GPU execution mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GpuMode {
     /// Automatically select best available backend
+    #[default]
     Auto,
     /// Force WebGPU backend
     WebGpu,
@@ -18,27 +19,16 @@ pub enum GpuMode {
     CpuOnly,
 }
 
-impl Default for GpuMode {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
-
 /// Power preference for GPU device selection
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PowerPreference {
     /// Prefer low power consumption (integrated GPU)
     LowPower,
     /// Prefer high performance (discrete GPU)
+    #[default]
     HighPerformance,
     /// No preference
     None,
-}
-
-impl Default for PowerPreference {
-    fn default() -> Self {
-        Self::HighPerformance
-    }
 }
 
 /// GPU acceleration configuration

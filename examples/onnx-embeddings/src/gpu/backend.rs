@@ -255,9 +255,6 @@ impl GpuBackend for CpuBackend {
 #[cfg(feature = "gpu")]
 use wgpu;
 
-#[cfg(feature = "gpu")]
-use bytemuck;
-
 /// WebGPU backend (via wgpu) with proper buffer management
 #[cfg(feature = "gpu")]
 pub struct WebGpuBackend {
@@ -472,8 +469,8 @@ impl GpuBackend for WebGpuBackend {
             source: wgpu::ShaderSource::Wgsl(shader_source.into()),
         });
 
-        // Create bind group layout for storage buffers
-        // We support up to 4 storage buffers
+        // Create bind group layout for storage buffers + uniform params
+        // Layout: binding 0-2 are storage, binding 3 is uniform params
         let bind_group_layout = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(&format!("BindGroupLayout: {}", entry_point)),
             entries: &[
@@ -502,6 +499,16 @@ impl GpuBackend for WebGpuBackend {
                     visibility: wgpu::ShaderStages::COMPUTE,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
@@ -746,64 +753,3 @@ pub async fn get_device_info() -> Option<GpuInfo> {
     }
 }
 
-// ==================== High-Level GPU Compute Helper ====================
-
-/// High-level GPU compute executor for common operations
-#[cfg(feature = "gpu")]
-pub struct GpuCompute {
-    backend: Arc<WebGpuBackend>,
-}
-
-#[cfg(feature = "gpu")]
-impl GpuCompute {
-    /// Create new compute executor
-    pub fn new(backend: Arc<WebGpuBackend>) -> Self {
-        Self { backend }
-    }
-
-    /// Execute a compute shader with f32 inputs and outputs
-    pub fn execute_f32(
-        &self,
-        shader: &str,
-        entry_point: &str,
-        input_a: &[f32],
-        input_b: &[f32],
-        output_size: usize,
-        workgroups: [u32; 3],
-    ) -> Result<Vec<f32>> {
-        // Create buffers
-        let buf_a = self.backend.create_buffer(
-            (input_a.len() * 4) as u64,
-            BufferUsage::Storage,
-        )?;
-        let buf_b = self.backend.create_buffer(
-            (input_b.len() * 4) as u64,
-            BufferUsage::Storage,
-        )?;
-        let buf_out = self.backend.create_buffer(
-            (output_size * 4) as u64,
-            BufferUsage::Storage,
-        )?;
-
-        // Write input data
-        self.backend.write_buffer(&buf_a, bytemuck::cast_slice(input_a))?;
-        self.backend.write_buffer(&buf_b, bytemuck::cast_slice(input_b))?;
-
-        // Create and execute pipeline
-        let pipeline = self.backend.create_pipeline(shader, entry_point, [64, 1, 1])?;
-        self.backend.dispatch(&pipeline, &[&buf_a, &buf_b, &buf_out], workgroups)?;
-        self.backend.sync()?;
-
-        // Read output
-        let output_bytes = self.backend.read_buffer(&buf_out, (output_size * 4) as u64)?;
-        let output: Vec<f32> = bytemuck::cast_slice(&output_bytes).to_vec();
-
-        // Cleanup
-        self.backend.release_buffer(buf_a)?;
-        self.backend.release_buffer(buf_b)?;
-        self.backend.release_buffer(buf_out)?;
-        self.backend.release_pipeline(pipeline)?;
-
-        Ok(output)
-    }
-}

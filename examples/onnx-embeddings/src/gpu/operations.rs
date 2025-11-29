@@ -3,7 +3,7 @@
 //! High-level GPU operations for embeddings with automatic fallback to CPU.
 
 use crate::{EmbeddingError, Result};
-use super::backend::{GpuBackend, GpuBuffer, BufferUsage, ComputePipeline};
+use super::backend::{GpuBackend, BufferUsage};
 use super::shaders::ShaderRegistry;
 use rayon::prelude::*;
 use std::sync::Arc;
@@ -18,10 +18,6 @@ pub struct GpuPooler {
     use_gpu: bool,
     #[cfg(feature = "gpu")]
     backend: Option<Arc<dyn GpuBackend>>,
-    #[cfg(feature = "gpu")]
-    mean_pool_pipeline: Option<ComputePipeline>,
-    #[cfg(feature = "gpu")]
-    max_pool_pipeline: Option<ComputePipeline>,
 }
 
 impl GpuPooler {
@@ -29,29 +25,17 @@ impl GpuPooler {
     pub fn new(backend: &dyn GpuBackend, _shaders: &ShaderRegistry) -> Result<Self> {
         let use_gpu = backend.is_available() && backend.device_info().supports_compute;
 
-        #[cfg(feature = "gpu")]
-        {
-            if use_gpu {
-                // Note: We can't store backend directly due to trait object limitations
-                // The actual dispatch happens through GpuAccelerator
-                return Ok(Self {
-                    use_gpu,
-                    backend: None, // Will be set by GpuAccelerator
-                    mean_pool_pipeline: None,
-                    max_pool_pipeline: None,
-                });
-            }
-        }
-
         Ok(Self {
             use_gpu,
             #[cfg(feature = "gpu")]
-            backend: None,
-            #[cfg(feature = "gpu")]
-            mean_pool_pipeline: None,
-            #[cfg(feature = "gpu")]
-            max_pool_pipeline: None,
+            backend: None, // Will be set by GpuAccelerator
         })
+    }
+
+    /// Set the backend for GPU operations
+    #[cfg(feature = "gpu")]
+    pub fn set_backend(&mut self, backend: Arc<dyn GpuBackend>) {
+        self.backend = Some(backend);
     }
 
     /// Mean pooling (GPU or CPU fallback)
@@ -108,7 +92,7 @@ impl GpuPooler {
         token_embeddings: &[f32],
         attention_mask: &[i64],
         batch_size: usize,
-        _seq_length: usize,
+        seq_length: usize,
         hidden_size: usize,
     ) -> Result<Vec<f32>> {
         let backend = self.backend.as_ref().ok_or_else(|| {
@@ -132,17 +116,23 @@ impl GpuPooler {
             BufferUsage::Storage,
         )?;
 
+        // Create params buffer (batch_size, seq_length, hidden_size)
+        let params: [u32; 3] = [batch_size as u32, seq_length as u32, hidden_size as u32];
+        let params_buf = backend.create_buffer(16, BufferUsage::Uniform)?; // 16 bytes aligned
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&token_buf, bytemuck::cast_slice(token_embeddings))?;
         backend.write_buffer(&mask_buf, bytemuck::cast_slice(attention_mask))?;
 
         // Create pipeline with mean pool shader
         let shader = super::shaders::MEAN_POOL_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "mean_pool", [64, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(batch_size as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&token_buf, &mask_buf, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let total_outputs = batch_size * hidden_size;
+        let workgroups = [total_outputs.div_ceil(64) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&token_buf, &mask_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -153,6 +143,7 @@ impl GpuPooler {
         backend.release_buffer(token_buf)?;
         backend.release_buffer(mask_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -164,7 +155,7 @@ impl GpuPooler {
         token_embeddings: &[f32],
         attention_mask: &[i64],
         batch_size: usize,
-        _seq_length: usize,
+        seq_length: usize,
         hidden_size: usize,
     ) -> Result<Vec<f32>> {
         let backend = self.backend.as_ref().ok_or_else(|| {
@@ -188,17 +179,23 @@ impl GpuPooler {
             BufferUsage::Storage,
         )?;
 
+        // Create params buffer (batch_size, seq_length, hidden_size)
+        let params: [u32; 3] = [batch_size as u32, seq_length as u32, hidden_size as u32];
+        let params_buf = backend.create_buffer(16, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&token_buf, bytemuck::cast_slice(token_embeddings))?;
         backend.write_buffer(&mask_buf, bytemuck::cast_slice(attention_mask))?;
 
         // Create pipeline with max pool shader
         let shader = super::shaders::MAX_POOL_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "max_pool", [64, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(batch_size as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&token_buf, &mask_buf, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let total_outputs = batch_size * hidden_size;
+        let workgroups = [total_outputs.div_ceil(64) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&token_buf, &mask_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -209,6 +206,7 @@ impl GpuPooler {
         backend.release_buffer(token_buf)?;
         backend.release_buffer(mask_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -405,17 +403,22 @@ impl GpuSimilarity {
         let candidates_buf = backend.create_buffer((candidates_flat.len() * 4) as u64, BufferUsage::Storage)?;
         let output_buf = backend.create_buffer((num_candidates * 4) as u64, BufferUsage::Storage)?;
 
+        // Create params buffer (dimension, num_candidates)
+        let params: [u32; 2] = [dimension as u32, num_candidates as u32];
+        let params_buf = backend.create_buffer(8, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&query_buf, bytemuck::cast_slice(query))?;
         backend.write_buffer(&candidates_buf, bytemuck::cast_slice(&candidates_flat))?;
 
         // Create pipeline with batch cosine shader
         let shader = super::shaders::BATCH_COSINE_SIMILARITY_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "batch_cosine_similarity", [256, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(num_candidates as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&query_buf, &candidates_buf, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let workgroups = [num_candidates.div_ceil(256) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&query_buf, &candidates_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -426,6 +429,7 @@ impl GpuSimilarity {
         backend.release_buffer(query_buf)?;
         backend.release_buffer(candidates_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -451,17 +455,22 @@ impl GpuSimilarity {
         let candidates_buf = backend.create_buffer((candidates_flat.len() * 4) as u64, BufferUsage::Storage)?;
         let output_buf = backend.create_buffer((num_candidates * 4) as u64, BufferUsage::Storage)?;
 
+        // Create params buffer (dimension, num_candidates)
+        let params: [u32; 2] = [dimension as u32, num_candidates as u32];
+        let params_buf = backend.create_buffer(8, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&query_buf, bytemuck::cast_slice(query))?;
         backend.write_buffer(&candidates_buf, bytemuck::cast_slice(&candidates_flat))?;
 
         // Create pipeline
         let shader = super::shaders::DOT_PRODUCT_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "dot_product", [256, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(num_candidates as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&query_buf, &candidates_buf, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let workgroups = [num_candidates.div_ceil(256) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&query_buf, &candidates_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -472,6 +481,7 @@ impl GpuSimilarity {
         backend.release_buffer(query_buf)?;
         backend.release_buffer(candidates_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -497,17 +507,22 @@ impl GpuSimilarity {
         let candidates_buf = backend.create_buffer((candidates_flat.len() * 4) as u64, BufferUsage::Storage)?;
         let output_buf = backend.create_buffer((num_candidates * 4) as u64, BufferUsage::Storage)?;
 
+        // Create params buffer (dimension, num_candidates)
+        let params: [u32; 2] = [dimension as u32, num_candidates as u32];
+        let params_buf = backend.create_buffer(8, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&query_buf, bytemuck::cast_slice(query))?;
         backend.write_buffer(&candidates_buf, bytemuck::cast_slice(&candidates_flat))?;
 
         // Create pipeline
         let shader = super::shaders::EUCLIDEAN_DISTANCE_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "euclidean_distance", [256, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(num_candidates as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&query_buf, &candidates_buf, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let workgroups = [num_candidates.div_ceil(256) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&query_buf, &candidates_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -518,6 +533,7 @@ impl GpuSimilarity {
         backend.release_buffer(query_buf)?;
         backend.release_buffer(candidates_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -626,21 +642,26 @@ impl GpuVectorOps {
 
         let num_vectors = vectors.len() / dimension;
 
-        // Create buffers
-        let vec_buf = backend.create_buffer((vectors.len() * 4) as u64, BufferUsage::Storage)?;
+        // Create buffers (input, dummy, output, params)
+        let input_buf = backend.create_buffer((vectors.len() * 4) as u64, BufferUsage::Storage)?;
         let dummy_buf = backend.create_buffer(4, BufferUsage::Storage)?;
         let output_buf = backend.create_buffer((vectors.len() * 4) as u64, BufferUsage::Storage)?;
 
+        // Create params buffer (dimension, num_vectors)
+        let params: [u32; 2] = [dimension as u32, num_vectors as u32];
+        let params_buf = backend.create_buffer(8, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
-        backend.write_buffer(&vec_buf, bytemuck::cast_slice(vectors))?;
+        backend.write_buffer(&input_buf, bytemuck::cast_slice(vectors))?;
 
         // Create pipeline
         let shader = super::shaders::L2_NORMALIZE_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "l2_normalize", [256, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(num_vectors as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&vec_buf, &dummy_buf, &output_buf], workgroups)?;
+        // Dispatch with 4 bindings
+        let workgroups = [num_vectors.div_ceil(256) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&input_buf, &dummy_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -649,16 +670,17 @@ impl GpuVectorOps {
         vectors.copy_from_slice(output);
 
         // Cleanup
-        backend.release_buffer(vec_buf)?;
+        backend.release_buffer(input_buf)?;
         backend.release_buffer(dummy_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(())
     }
 
     #[cfg(feature = "gpu")]
-    fn matmul_gpu(&self, matrix: &[f32], vector: &[f32], rows: usize, _cols: usize) -> Result<Vec<f32>> {
+    fn matmul_gpu(&self, matrix: &[f32], vector: &[f32], rows: usize, cols: usize) -> Result<Vec<f32>> {
         let backend = self.backend.as_ref().ok_or_else(|| {
             EmbeddingError::GpuOperationFailed {
                 operation: "matmul".to_string(),
@@ -671,17 +693,22 @@ impl GpuVectorOps {
         let vec_buf = backend.create_buffer((vector.len() * 4) as u64, BufferUsage::Storage)?;
         let output_buf = backend.create_buffer((rows * 4) as u64, BufferUsage::Storage)?;
 
+        // Create params buffer (rows, cols)
+        let params: [u32; 2] = [rows as u32, cols as u32];
+        let params_buf = backend.create_buffer(8, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&mat_buf, bytemuck::cast_slice(matrix))?;
         backend.write_buffer(&vec_buf, bytemuck::cast_slice(vector))?;
 
         // Create pipeline
         let shader = super::shaders::MATMUL_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "matmul", [16, 16, 1])?;
 
-        // Dispatch
-        let workgroups = [(rows as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&mat_buf, &vec_buf, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let workgroups = [rows.div_ceil(16) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&mat_buf, &vec_buf, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -692,6 +719,7 @@ impl GpuVectorOps {
         backend.release_buffer(mat_buf)?;
         backend.release_buffer(vec_buf)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -711,17 +739,22 @@ impl GpuVectorOps {
         let buf_b = backend.create_buffer((b.len() * 4) as u64, BufferUsage::Storage)?;
         let output_buf = backend.create_buffer((a.len() * 4) as u64, BufferUsage::Storage)?;
 
+        // Create params buffer (length)
+        let params: [u32; 1] = [a.len() as u32];
+        let params_buf = backend.create_buffer(4, BufferUsage::Uniform)?;
+        backend.write_buffer(&params_buf, bytemuck::cast_slice(&params))?;
+
         // Write input data
         backend.write_buffer(&buf_a, bytemuck::cast_slice(a))?;
         backend.write_buffer(&buf_b, bytemuck::cast_slice(b))?;
 
         // Create pipeline
         let shader = super::shaders::VECTOR_ADD_SHADER;
-        let pipeline = backend.create_pipeline(shader, "main", [64, 1, 1])?;
+        let pipeline = backend.create_pipeline(shader, "vector_add", [256, 1, 1])?;
 
-        // Dispatch
-        let workgroups = [(a.len() as u32 + 63) / 64, 1, 1];
-        backend.dispatch(&pipeline, &[&buf_a, &buf_b, &output_buf], workgroups)?;
+        // Dispatch with params buffer as 4th binding
+        let workgroups = [a.len().div_ceil(256) as u32, 1, 1];
+        backend.dispatch(&pipeline, &[&buf_a, &buf_b, &output_buf, &params_buf], workgroups)?;
         backend.sync()?;
 
         // Read output
@@ -732,6 +765,7 @@ impl GpuVectorOps {
         backend.release_buffer(buf_a)?;
         backend.release_buffer(buf_b)?;
         backend.release_buffer(output_buf)?;
+        backend.release_buffer(params_buf)?;
         backend.release_pipeline(pipeline)?;
 
         Ok(output)
@@ -878,10 +912,6 @@ mod tests {
             use_gpu: false,
             #[cfg(feature = "gpu")]
             backend: None,
-            #[cfg(feature = "gpu")]
-            mean_pool_pipeline: None,
-            #[cfg(feature = "gpu")]
-            max_pool_pipeline: None,
         };
 
         // batch=2, seq=2, hidden=3

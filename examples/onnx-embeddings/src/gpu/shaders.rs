@@ -335,8 +335,10 @@ struct Params {
     num_vectors: u32,
 }
 
-@group(0) @binding(0) var<storage, read_write> vectors: array<f32>;
-@group(0) @binding(1) var<uniform> params: Params;
+@group(0) @binding(0) var<storage, read> input_vectors: array<f32>;
+@group(0) @binding(1) var<storage, read> _dummy: array<f32>;
+@group(0) @binding(2) var<storage, read_write> output_vectors: array<f32>;
+@group(0) @binding(3) var<uniform> params: Params;
 
 @compute @workgroup_size(256)
 fn l2_normalize(@builtin(global_invocation_id) gid: vec3<u32>) {
@@ -351,16 +353,20 @@ fn l2_normalize(@builtin(global_invocation_id) gid: vec3<u32>) {
     // Compute norm
     var norm_sq: f32 = 0.0;
     for (var i = 0u; i < params.dimension; i++) {
-        let val = vectors[base + i];
+        let val = input_vectors[base + i];
         norm_sq += val * val;
     }
 
     let norm = sqrt(norm_sq);
 
-    // Normalize
+    // Normalize and write to output
     if (norm > 1e-12) {
         for (var i = 0u; i < params.dimension; i++) {
-            vectors[base + i] /= norm;
+            output_vectors[base + i] = input_vectors[base + i] / norm;
+        }
+    } else {
+        for (var i = 0u; i < params.dimension; i++) {
+            output_vectors[base + i] = input_vectors[base + i];
         }
     }
 }
@@ -462,8 +468,9 @@ struct Params {
 }
 
 @group(0) @binding(0) var<storage, read> tokens: array<f32>;
-@group(0) @binding(1) var<storage, read_write> output: array<f32>;
-@group(0) @binding(2) var<uniform> params: Params;
+@group(0) @binding(1) var<storage, read> _dummy: array<f32>;
+@group(0) @binding(2) var<storage, read_write> output: array<f32>;
+@group(0) @binding(3) var<uniform> params: Params;
 
 @compute @workgroup_size(64)
 fn cls_pool(@builtin(global_invocation_id) gid: vec3<u32>) {
@@ -541,8 +548,10 @@ struct Params {
     scale: f32,
 }
 
-@group(0) @binding(0) var<storage, read_write> vector: array<f32>;
-@group(0) @binding(1) var<uniform> params: Params;
+@group(0) @binding(0) var<storage, read> input_vector: array<f32>;
+@group(0) @binding(1) var<storage, read> _dummy: array<f32>;
+@group(0) @binding(2) var<storage, read_write> output_vector: array<f32>;
+@group(0) @binding(3) var<uniform> params: Params;
 
 @compute @workgroup_size(256)
 fn vector_scale(@builtin(global_invocation_id) gid: vec3<u32>) {
@@ -552,7 +561,7 @@ fn vector_scale(@builtin(global_invocation_id) gid: vec3<u32>) {
         return;
     }
 
-    vector[idx] *= params.scale;
+    output_vector[idx] = input_vector[idx] * params.scale;
 }
 "#;
 

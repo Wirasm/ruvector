@@ -97,8 +97,8 @@ impl Pooler {
         let mut result = vec![0.0f32; hidden_size];
         let mut count = 0.0f32;
 
-        for i in 0..seq_length {
-            if attention_mask[i] == 1 {
+        for (i, &mask) in attention_mask.iter().enumerate().take(seq_length) {
+            if mask == 1 {
                 let start = i * hidden_size;
                 let end = start + hidden_size;
                 for (j, val) in token_embeddings[start..end].iter().enumerate() {
@@ -132,8 +132,8 @@ impl Pooler {
     ) -> Vec<f32> {
         let mut result = vec![f32::NEG_INFINITY; hidden_size];
 
-        for i in 0..seq_length {
-            if attention_mask[i] == 1 {
+        for (i, &mask) in attention_mask.iter().enumerate().take(seq_length) {
+            if mask == 1 {
                 let start = i * hidden_size;
                 let end = start + hidden_size;
                 for (j, val) in token_embeddings[start..end].iter().enumerate() {
@@ -210,8 +210,8 @@ impl Pooler {
         let mut result = vec![0.0f32; hidden_size];
         let mut total_weight = 0.0f32;
 
-        for i in 0..seq_length {
-            if attention_mask[i] == 1 {
+        for (i, &mask) in attention_mask.iter().enumerate().take(seq_length) {
+            if mask == 1 {
                 // Weight decreases with position (more weight to early tokens)
                 let weight = 1.0 / (i + 1) as f32;
                 let start = i * hidden_size;

@@ -117,9 +117,10 @@ pub mod prelude {
 }
 
 /// Supported embedding models with pre-configured settings
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum PretrainedModel {
     /// all-MiniLM-L6-v2: 384 dimensions, fast inference
+    #[default]
     AllMiniLmL6V2,
     /// all-MiniLM-L12-v2: 384 dimensions, better quality
     AllMiniLmL12V2,
@@ -184,8 +185,3 @@ impl PretrainedModel {
     }
 }
 
-impl Default for PretrainedModel {
-    fn default() -> Self {
-        Self::AllMiniLmL6V2
-    }
-}

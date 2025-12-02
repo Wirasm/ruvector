@@ -1,7 +1,7 @@
 # RuVector-Postgres Development & Testing Dockerfile
 # Multi-stage build for PostgreSQL 16 with pgrx and all dependencies
 
-FROM rust:1.75-bookworm AS builder
+FROM rust:1.82-bookworm AS builder
 
 # Add PostgreSQL APT repository
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && \
@@ -29,13 +29,18 @@ RUN cargo pgrx init --pg16 /usr/lib/postgresql/16/bin/pg_config
 ENV PGRX_PG_CONFIG_PATH=/usr/lib/postgresql/16/bin/pg_config
 ENV PGRX_HOME=/root/.pgrx
 
-# Set working directory
-WORKDIR /app
+# Set working directory - use /build to avoid any parent Cargo.toml issues
+WORKDIR /build/ruvector-postgres
 
-# Copy only what's needed for the build - no workspace dependencies
-COPY crates/ruvector-postgres/ ./
+# Copy only the postgres crate - this is a standalone crate with no workspace dependencies
+COPY crates/ruvector-postgres/Cargo.toml ./
+COPY crates/ruvector-postgres/build.rs ./
+COPY crates/ruvector-postgres/ruvector.control ./
+COPY crates/ruvector-postgres/src ./src/
+COPY crates/ruvector-postgres/sql ./sql/
+COPY crates/ruvector-postgres/benches ./benches/
 
-# Build the extension with all features (no workspace)
+# Build the extension with all features (standalone, no workspace)
 RUN cargo pgrx package \
     --pg-config /usr/lib/postgresql/16/bin/pg_config \
     --features pg16
@@ -48,9 +53,9 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy built extension from builder
-COPY --from=builder /app/target/release/ruvector_postgres-pg16/usr/share/postgresql/16/extension/* /usr/share/postgresql/16/extension/
-COPY --from=builder /app/target/release/ruvector_postgres-pg16/usr/lib/postgresql/16/lib/* /usr/lib/postgresql/16/lib/
+# Copy built extension from builder (updated path for /build directory)
+COPY --from=builder /build/ruvector-postgres/target/release/ruvector_postgres-pg16/usr/share/postgresql/16/extension/* /usr/share/postgresql/16/extension/
+COPY --from=builder /build/ruvector-postgres/target/release/ruvector_postgres-pg16/usr/lib/postgresql/16/lib/* /usr/lib/postgresql/16/lib/
 
 # Copy initialization script
 COPY crates/ruvector-postgres/docker/init.sql /docker-entrypoint-initdb.d/

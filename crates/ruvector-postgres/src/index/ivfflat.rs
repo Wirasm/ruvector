@@ -407,7 +407,7 @@ mod tests {
 
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         (0..n)
-            .map(|_| (0..dims).map(|_| rng.random_range(-1.0..1.0)).collect())
+            .map(|_| (0..dims).map(|_| rng.gen_range(-1.0..1.0)).collect())
             .collect()
     }
 

@@ -423,23 +423,23 @@ mod tests {
     #[test]
     fn test_new() {
         let codes = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let pq = ProductVec::new(1536, 8, 256, codes.clone());
+        let pq = ProductVec::new(1536, 8, 255, codes.clone());
 
         assert_eq!(pq.original_dims(), 1536);
         assert_eq!(pq.m(), 8);
-        assert_eq!(pq.k(), 256);
+        assert_eq!(pq.k(), 255);
         assert_eq!(pq.codes(), &codes[..]);
     }
 
     #[test]
     fn test_dims_per_subspace() {
-        let pq = ProductVec::new(1536, 48, 256, vec![0; 48]);
+        let pq = ProductVec::new(1536, 48, 255, vec![0; 48]);
         assert_eq!(pq.dims_per_subspace(), 32); // 1536 / 48 = 32
     }
 
     #[test]
     fn test_compression_ratio() {
-        let pq = ProductVec::new(1536, 48, 256, vec![0; 48]);
+        let pq = ProductVec::new(1536, 48, 255, vec![0; 48]);
         // 1536 * 4 bytes = 6144 bytes / 48 bytes = 128x
         assert!((pq.compression_ratio() - 128.0).abs() < 0.1);
     }
@@ -482,7 +482,7 @@ mod tests {
     #[test]
     fn test_serialization() {
         let codes = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let pq = ProductVec::new(1536, 8, 256, codes);
+        let pq = ProductVec::new(1536, 8, 255, codes);
 
         let bytes = pq.to_bytes();
         let pq2 = ProductVec::from_bytes(&bytes);

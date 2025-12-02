@@ -1,13 +1,112 @@
 //! SQL operators and distance functions for vector similarity search
 //!
-//! Provides array-based distance functions with SIMD optimization.
-//! The native ruvector type operators are defined in SQL using raw C functions.
+//! Provides both array-based and native ruvector type distance functions with SIMD optimization.
 
 use pgrx::prelude::*;
 
 use crate::distance::{
     cosine_distance, euclidean_distance, inner_product_distance, manhattan_distance,
 };
+use crate::types::RuVector;
+
+// ============================================================================
+// Native RuVector Type Distance Functions (Zero-Copy SIMD)
+// ============================================================================
+// These functions use the native ruvector type directly for maximum performance
+
+/// Compute L2 (Euclidean) distance between two native ruvector types
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_l2_distance(a: RuVector, b: RuVector) -> f32 {
+    if a.dimensions() != b.dimensions() {
+        pgrx::error!(
+            "Cannot compute distance between vectors of different dimensions ({} vs {})",
+            a.dimensions(),
+            b.dimensions()
+        );
+    }
+    euclidean_distance(a.as_slice(), b.as_slice())
+}
+
+/// Compute cosine distance between two native ruvector types
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_cosine_distance(a: RuVector, b: RuVector) -> f32 {
+    if a.dimensions() != b.dimensions() {
+        pgrx::error!(
+            "Cannot compute distance between vectors of different dimensions ({} vs {})",
+            a.dimensions(),
+            b.dimensions()
+        );
+    }
+    cosine_distance(a.as_slice(), b.as_slice())
+}
+
+/// Compute inner product between two native ruvector types
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_inner_product(a: RuVector, b: RuVector) -> f32 {
+    if a.dimensions() != b.dimensions() {
+        pgrx::error!(
+            "Cannot compute inner product between vectors of different dimensions ({} vs {})",
+            a.dimensions(),
+            b.dimensions()
+        );
+    }
+    -inner_product_distance(a.as_slice(), b.as_slice())
+}
+
+/// Compute Manhattan (L1) distance between two native ruvector types
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_l1_distance(a: RuVector, b: RuVector) -> f32 {
+    if a.dimensions() != b.dimensions() {
+        pgrx::error!(
+            "Cannot compute distance between vectors of different dimensions ({} vs {})",
+            a.dimensions(),
+            b.dimensions()
+        );
+    }
+    manhattan_distance(a.as_slice(), b.as_slice())
+}
+
+/// Get dimensions of a native ruvector
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_dims(v: RuVector) -> i32 {
+    v.dimensions() as i32
+}
+
+/// Get L2 norm of a native ruvector
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_norm(v: RuVector) -> f32 {
+    v.norm()
+}
+
+/// Normalize a native ruvector to unit length
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_normalize(v: RuVector) -> RuVector {
+    v.normalize()
+}
+
+/// Add two native ruvector types
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_add(a: RuVector, b: RuVector) -> RuVector {
+    if a.dimensions() != b.dimensions() {
+        pgrx::error!("Vectors must have the same dimensions");
+    }
+    a.add(&b)
+}
+
+/// Subtract two native ruvector types
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_sub(a: RuVector, b: RuVector) -> RuVector {
+    if a.dimensions() != b.dimensions() {
+        pgrx::error!("Vectors must have the same dimensions");
+    }
+    a.sub(&b)
+}
+
+/// Multiply native ruvector by scalar
+#[pg_extern(immutable, parallel_safe)]
+pub fn ruvector_mul_scalar(v: RuVector, scalar: f32) -> RuVector {
+    v.mul_scalar(scalar)
+}
 
 // ============================================================================
 // Distance Functions (Array-based) with SIMD Optimization

@@ -87,8 +87,8 @@ mod distance_impl {
 
 fn generate_vectors(n: usize, dims: usize, seed: u64) -> (Vec<f32>, Vec<f32>) {
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
-    let a: Vec<f32> = (0..dims).map(|_| rng.random_range(-1.0..1.0)).collect();
-    let b: Vec<f32> = (0..dims).map(|_| rng.random_range(-1.0..1.0)).collect();
+    let a: Vec<f32> = (0..dims).map(|_| rng.gen_range(-1.0..1.0)).collect();
+    let b: Vec<f32> = (0..dims).map(|_| rng.gen_range(-1.0..1.0)).collect();
     (a, b)
 }
 
@@ -164,9 +164,9 @@ fn bench_batch(c: &mut Criterion) {
 
     for dims in [128, 384, 1536].iter() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let query: Vec<f32> = (0..*dims).map(|_| rng.random_range(-1.0..1.0)).collect();
+        let query: Vec<f32> = (0..*dims).map(|_| rng.gen_range(-1.0..1.0)).collect();
         let vectors: Vec<Vec<f32>> = (0..1000)
-            .map(|_| (0..*dims).map(|_| rng.random_range(-1.0..1.0)).collect())
+            .map(|_| (0..*dims).map(|_| rng.gen_range(-1.0..1.0)).collect())
             .collect();
 
         group.bench_with_input(

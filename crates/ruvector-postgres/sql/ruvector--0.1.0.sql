@@ -28,6 +28,150 @@ AS 'MODULE_PATHNAME', 'ruvector_memory_stats_wrapper'
 LANGUAGE C VOLATILE PARALLEL SAFE;
 
 -- ============================================================================
+-- Native RuVector Type (pgvector-compatible)
+-- ============================================================================
+
+-- Create the ruvector type using low-level I/O functions
+CREATE TYPE ruvector;
+
+CREATE OR REPLACE FUNCTION ruvector_in(cstring) RETURNS ruvector
+AS 'MODULE_PATHNAME', 'ruvector_in' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION ruvector_out(ruvector) RETURNS cstring
+AS 'MODULE_PATHNAME', 'ruvector_out' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION ruvector_recv(internal) RETURNS ruvector
+AS 'MODULE_PATHNAME', 'ruvector_recv' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION ruvector_send(ruvector) RETURNS bytea
+AS 'MODULE_PATHNAME', 'ruvector_send' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION ruvector_typmod_in(cstring[]) RETURNS int
+AS 'MODULE_PATHNAME', 'ruvector_typmod_in' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION ruvector_typmod_out(int) RETURNS cstring
+AS 'MODULE_PATHNAME', 'ruvector_typmod_out' LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE TYPE ruvector (
+    INPUT = ruvector_in,
+    OUTPUT = ruvector_out,
+    RECEIVE = ruvector_recv,
+    SEND = ruvector_send,
+    TYPMOD_IN = ruvector_typmod_in,
+    TYPMOD_OUT = ruvector_typmod_out,
+    STORAGE = extended,
+    INTERNALLENGTH = VARIABLE,
+    ALIGNMENT = double
+);
+
+-- ============================================================================
+-- Native RuVector Distance Functions (SIMD-optimized)
+-- ============================================================================
+
+-- L2 distance for native ruvector type
+CREATE OR REPLACE FUNCTION ruvector_l2_distance(a ruvector, b ruvector)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_l2_distance_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Cosine distance for native ruvector type
+CREATE OR REPLACE FUNCTION ruvector_cosine_distance(a ruvector, b ruvector)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_cosine_distance_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Inner product for native ruvector type
+CREATE OR REPLACE FUNCTION ruvector_inner_product(a ruvector, b ruvector)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_inner_product_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Manhattan (L1) distance for native ruvector type
+CREATE OR REPLACE FUNCTION ruvector_l1_distance(a ruvector, b ruvector)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_l1_distance_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Get dimensions of ruvector
+CREATE OR REPLACE FUNCTION ruvector_dims(v ruvector)
+RETURNS int
+AS 'MODULE_PATHNAME', 'ruvector_dims_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Get L2 norm of ruvector
+CREATE OR REPLACE FUNCTION ruvector_norm(v ruvector)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_norm_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Normalize ruvector
+CREATE OR REPLACE FUNCTION ruvector_normalize(v ruvector)
+RETURNS ruvector
+AS 'MODULE_PATHNAME', 'ruvector_normalize_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Add two ruvectors
+CREATE OR REPLACE FUNCTION ruvector_add(a ruvector, b ruvector)
+RETURNS ruvector
+AS 'MODULE_PATHNAME', 'ruvector_add_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Subtract two ruvectors
+CREATE OR REPLACE FUNCTION ruvector_sub(a ruvector, b ruvector)
+RETURNS ruvector
+AS 'MODULE_PATHNAME', 'ruvector_sub_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Multiply ruvector by scalar
+CREATE OR REPLACE FUNCTION ruvector_mul_scalar(v ruvector, s real)
+RETURNS ruvector
+AS 'MODULE_PATHNAME', 'ruvector_mul_scalar_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- ============================================================================
+-- Operators for Native RuVector Type
+-- ============================================================================
+
+-- L2 distance operator (<->)
+CREATE OPERATOR <-> (
+    LEFTARG = ruvector,
+    RIGHTARG = ruvector,
+    FUNCTION = ruvector_l2_distance,
+    COMMUTATOR = '<->'
+);
+
+-- Cosine distance operator (<=>)
+CREATE OPERATOR <=> (
+    LEFTARG = ruvector,
+    RIGHTARG = ruvector,
+    FUNCTION = ruvector_cosine_distance,
+    COMMUTATOR = '<=>'
+);
+
+-- Inner product operator (<#>)
+CREATE OPERATOR <#> (
+    LEFTARG = ruvector,
+    RIGHTARG = ruvector,
+    FUNCTION = ruvector_inner_product,
+    COMMUTATOR = '<#>'
+);
+
+-- Addition operator (+)
+CREATE OPERATOR + (
+    LEFTARG = ruvector,
+    RIGHTARG = ruvector,
+    FUNCTION = ruvector_add,
+    COMMUTATOR = '+'
+);
+
+-- Subtraction operator (-)
+CREATE OPERATOR - (
+    LEFTARG = ruvector,
+    RIGHTARG = ruvector,
+    FUNCTION = ruvector_sub
+);
+
+-- ============================================================================
 -- Distance Functions (array-based with SIMD optimization)
 -- ============================================================================
 

@@ -371,18 +371,38 @@ impl VectorData for RuVector {
 // ============================================================================
 // PostgreSQL Type I/O Functions (Native Interface)
 // ============================================================================
-// Note: These functions are exported for SQL registration but use manual SQL
-// declarations rather than #[pg_extern] to properly integrate with PostgreSQL's
-// type system as IN/OUT/RECV/SEND functions.
+// Using pgrx pg_extern for proper function registration
+
+/// Text input function: Parse '[1.0, 2.0, 3.0]' to RuVector
+#[pg_extern(immutable, parallel_safe, sql = false)]
+pub fn ruvector_in_fn(input: &std::ffi::CStr) -> RuVector {
+    let input_str = match input.to_str() {
+        Ok(s) => s,
+        Err(_) => pgrx::error!("Invalid UTF-8 in vector input"),
+    };
+
+    match RuVector::from_str(input_str) {
+        Ok(vec) => vec,
+        Err(e) => pgrx::error!("Invalid vector format: {}", e),
+    }
+}
+
+/// Text output function: Convert RuVector to '[1.0, 2.0, 3.0]'
+#[pg_extern(immutable, parallel_safe, sql = false)]
+pub fn ruvector_out_fn(v: RuVector) -> String {
+    v.to_string()
+}
+
+// Low-level C functions for PostgreSQL type system
+// These provide PG_FUNCTION_INFO_V1 compatible registration
 
 /// Text input function: Parse '[1.0, 2.0, 3.0]' to RuVector varlena
 ///
 /// This is the PostgreSQL IN function for the ruvector type.
-/// Called when converting text to ruvector.
+#[pg_guard]
 #[no_mangle]
 pub extern "C" fn ruvector_in(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum {
     unsafe {
-        // Access first argument (cstring input)
         let datum = (*fcinfo).args.as_ptr().add(0).read().value;
         let input_cstr = datum.cast_mut_ptr::<std::os::raw::c_char>();
         let input = CStr::from_ptr(input_cstr);
@@ -401,17 +421,24 @@ pub extern "C" fn ruvector_in(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum
     }
 }
 
+// Register pg_finfo symbol
+#[no_mangle]
+pub extern "C" fn pg_finfo_ruvector_in() -> &'static pg_sys::Pg_finfo_record {
+    static FINFO: pg_sys::Pg_finfo_record = pg_sys::Pg_finfo_record { api_version: 1 };
+    &FINFO
+}
+
 /// Text output function: Convert RuVector to '[1.0, 2.0, 3.0]'
-///
-/// This is the PostgreSQL OUT function for the ruvector type.
-/// Called when converting ruvector to text.
+#[pg_guard]
 #[no_mangle]
 pub extern "C" fn ruvector_out(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum {
     unsafe {
-        // Access first argument (varlena vector)
         let datum = (*fcinfo).args.as_ptr().add(0).read().value;
         let varlena_ptr = datum.cast_mut_ptr::<pg_sys::varlena>();
-        let vector = RuVector::from_varlena(varlena_ptr);
+
+        // CRITICAL: Must detoast before reading - data may be compressed/external
+        let detoasted_ptr = pg_sys::pg_detoast_datum(varlena_ptr);
+        let vector = RuVector::from_varlena(detoasted_ptr);
 
         let output = vector.to_string();
         let cstring = match CString::new(output) {
@@ -419,7 +446,6 @@ pub extern "C" fn ruvector_out(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datu
             Err(_) => pgrx::error!("Failed to create output string"),
         };
 
-        // Allocate in PostgreSQL memory and copy
         let len = cstring.as_bytes_with_nul().len();
         let pg_str = pg_sys::palloc(len) as *mut std::os::raw::c_char;
         ptr::copy_nonoverlapping(cstring.as_ptr(), pg_str, len);
@@ -428,21 +454,21 @@ pub extern "C" fn ruvector_out(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datu
     }
 }
 
+#[no_mangle]
+pub extern "C" fn pg_finfo_ruvector_out() -> &'static pg_sys::Pg_finfo_record {
+    static FINFO: pg_sys::Pg_finfo_record = pg_sys::Pg_finfo_record { api_version: 1 };
+    &FINFO
+}
+
 /// Binary input function: Receive vector from network in binary format
-///
-/// This is the PostgreSQL RECEIVE function for the ruvector type.
-/// Binary format:
-/// - dimensions (2 bytes, network byte order / big-endian)
-/// - f32 values (4 bytes each, IEEE 754 format)
+#[pg_guard]
 #[no_mangle]
 pub extern "C" fn ruvector_recv(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum {
     unsafe {
-        // Access first argument (StringInfo buffer)
         let datum = (*fcinfo).args.as_ptr().add(0).read().value;
         let buf = datum.cast_mut_ptr::<pg_sys::StringInfoData>();
         let buf_ptr = buf;
 
-        // Read dimensions (2 bytes, big-endian)
         let dimensions = pg_sys::pq_getmsgint(buf_ptr, 2) as u16;
 
         if dimensions as usize > MAX_DIMENSIONS {
@@ -453,14 +479,11 @@ pub extern "C" fn ruvector_recv(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Dat
             );
         }
 
-        // Read f32 data
         let mut data = Vec::with_capacity(dimensions as usize);
         for _ in 0..dimensions {
-            // Read as i32 then reinterpret as f32 (network byte order)
             let int_bits = pg_sys::pq_getmsgint(buf_ptr, 4) as u32;
             let float_val = f32::from_bits(int_bits);
 
-            // Validate
             if float_val.is_nan() {
                 pgrx::error!("NaN not allowed in vector");
             }
@@ -476,6 +499,12 @@ pub extern "C" fn ruvector_recv(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Dat
     }
 }
 
+#[no_mangle]
+pub extern "C" fn pg_finfo_ruvector_recv() -> &'static pg_sys::Pg_finfo_record {
+    static FINFO: pg_sys::Pg_finfo_record = pg_sys::Pg_finfo_record { api_version: 1 };
+    &FINFO
+}
+
 /// Binary output function: Send vector in binary format over network
 ///
 /// This is the PostgreSQL SEND function for the ruvector type.
@@ -486,7 +515,10 @@ pub extern "C" fn ruvector_send(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Dat
         // Access first argument (varlena vector)
         let datum = (*fcinfo).args.as_ptr().add(0).read().value;
         let varlena_ptr = datum.cast_mut_ptr::<pg_sys::varlena>();
-        let vector = RuVector::from_varlena(varlena_ptr);
+
+        // CRITICAL: Must detoast before reading - data may be compressed/external
+        let detoasted_ptr = pg_sys::pg_detoast_datum(varlena_ptr);
+        let vector = RuVector::from_varlena(detoasted_ptr);
 
         // Create StringInfo for output
         let buf = pg_sys::makeStringInfo();
@@ -523,6 +555,148 @@ pub extern "C" fn ruvector_send(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Dat
     }
 }
 
+#[no_mangle]
+pub extern "C" fn pg_finfo_ruvector_send() -> &'static pg_sys::Pg_finfo_record {
+    static FINFO: pg_sys::Pg_finfo_record = pg_sys::Pg_finfo_record { api_version: 1 };
+    &FINFO
+}
+
+// ============================================================================
+// TypeMod Functions (for dimension specification like ruvector(384))
+// ============================================================================
+
+/// Typmod input function: parse dimension specification
+/// Called when user specifies ruvector(dimensions) in a column type
+#[pg_extern(immutable, strict, parallel_safe)]
+fn ruvector_typmod_in_fn(list: pgrx::Array<&CStr>) -> i32 {
+    // Should have exactly one element (dimensions)
+    if list.len() != 1 {
+        pgrx::error!("ruvector type modifier must have exactly one dimension");
+    }
+
+    // Get the first element
+    let dim_str = list.get(0)
+        .flatten()
+        .ok_or_else(|| pgrx::error!("ruvector dimension cannot be null"))
+        .unwrap();
+
+    // Parse the dimension string
+    let dim_str_rust = dim_str.to_str().unwrap_or("0");
+    let dimensions: i32 = dim_str_rust.parse().unwrap_or_else(|_| {
+        pgrx::error!("invalid dimension specification: {}", dim_str_rust);
+    });
+
+    // Validate dimensions
+    if dimensions < 1 || dimensions > MAX_DIMENSIONS as i32 {
+        pgrx::error!(
+            "dimensions must be between 1 and {}, got {}",
+            MAX_DIMENSIONS,
+            dimensions
+        );
+    }
+
+    dimensions
+}
+
+/// Low-level wrapper for typmod_in (for CREATE TYPE)
+#[pg_guard]
+#[no_mangle]
+pub extern "C" fn ruvector_typmod_in(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum {
+    unsafe {
+        // Get the cstring array argument
+        let array_datum = (*fcinfo).args.as_ptr().add(0).read().value;
+
+        // Cast to ArrayType pointer and get first element directly
+        let array_ptr = array_datum.cast_mut_ptr::<pg_sys::ArrayType>();
+
+        // Get array data section
+        let data_ptr = (array_ptr as *const u8).add(std::mem::size_of::<pg_sys::ArrayType>());
+
+        // First element offset is after the null bitmap (if any)
+        // For simple cstring arrays, data typically starts immediately
+        // This is a simplified approach - just read the first cstring
+
+        // The first element should be a pointer to the dimension string
+        // For a simple 1D cstring array: [ArrayType header][data offset][cstring1][cstring2]...
+
+        // Get the array bounds
+        let ndim = (*array_ptr).ndim;
+        if ndim != 1 {
+            pgrx::error!("ruvector type modifier must be a 1D array");
+        }
+
+        // For text/cstring array, parse directly using pg_detoast if needed
+        let dims_ptr = (array_ptr as *const u8).add(std::mem::offset_of!(pg_sys::ArrayType, dataoffset) + 4) as *const i32;
+        let dim0 = *dims_ptr;
+
+        if dim0 != 1 {
+            pgrx::error!("ruvector type modifier must have exactly one dimension");
+        }
+
+        // Get array data - for cstring[], each element is null-terminated
+        let dataoffset = if (*array_ptr).dataoffset == 0 {
+            // No null bitmap, data follows header + dimensions + lower bounds
+            let header_size = std::mem::size_of::<pg_sys::ArrayType>();
+            let dims_size = (ndim as usize) * std::mem::size_of::<i32>() * 2; // dims + lbounds
+            header_size + dims_size
+        } else {
+            (*array_ptr).dataoffset as usize
+        };
+
+        // First cstring element
+        let first_elem = (array_ptr as *const u8).add(dataoffset) as *const i8;
+        let dim_str = CStr::from_ptr(first_elem);
+        let dim_str_rust = dim_str.to_str().unwrap_or("0");
+
+        let dimensions: i32 = dim_str_rust.parse().unwrap_or_else(|_| {
+            pgrx::error!("invalid dimension specification: {}", dim_str_rust);
+        });
+
+        // Validate dimensions
+        if dimensions < 1 || dimensions > MAX_DIMENSIONS as i32 {
+            pgrx::error!(
+                "dimensions must be between 1 and {}, got {}",
+                MAX_DIMENSIONS,
+                dimensions
+            );
+        }
+
+        pg_sys::Datum::from(dimensions)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn pg_finfo_ruvector_typmod_in() -> &'static pg_sys::Pg_finfo_record {
+    static FINFO: pg_sys::Pg_finfo_record = pg_sys::Pg_finfo_record { api_version: 1 };
+    &FINFO
+}
+
+/// Typmod output function: format dimension specification for display
+#[pg_guard]
+#[no_mangle]
+pub extern "C" fn ruvector_typmod_out(fcinfo: pg_sys::FunctionCallInfo) -> pg_sys::Datum {
+    unsafe {
+        let typmod = (*fcinfo).args.as_ptr().add(0).read().value.value() as i32;
+
+        // Format as "(dimensions)"
+        let output = format!("({})", typmod);
+        let c_str = CString::new(output).unwrap();
+
+        // Allocate in PostgreSQL memory
+        let len = c_str.as_bytes_with_nul().len();
+        let pg_str = pg_sys::palloc(len) as *mut i8;
+        ptr::copy_nonoverlapping(c_str.as_ptr(), pg_str, len);
+
+        pg_sys::Datum::from(pg_str)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn pg_finfo_ruvector_typmod_out() -> &'static pg_sys::Pg_finfo_record {
+    static FINFO: pg_sys::Pg_finfo_record = pg_sys::Pg_finfo_record { api_version: 1 };
+    &FINFO
+}
+
 // ============================================================================
 // PostgreSQL Type Integration
 // ============================================================================
@@ -556,12 +730,85 @@ impl pgrx::FromDatum for RuVector {
         is_null: bool,
         _typoid: pgrx::pg_sys::Oid,
     ) -> Option<Self> {
-        if is_null {
+        if is_null || datum.is_null() {
             return None;
         }
 
-        let varlena_ptr = datum.cast_mut_ptr::<pgrx::pg_sys::varlena>();
-        Some(RuVector::from_varlena(varlena_ptr))
+        // IMPORTANT: Must detoast before reading - varlena may be compressed/external
+        // Use pg_detoast_datum_copy to always get a clean palloc'd copy
+        let raw_ptr = datum.cast_mut_ptr::<pg_sys::varlena>();
+        if raw_ptr.is_null() {
+            return None;
+        }
+
+        // Detoast (handles TOAST compressed/external storage)
+        // Use pg_detoast_datum which avoids copy if already detoasted
+        let detoasted_ptr = pg_sys::pg_detoast_datum(raw_ptr);
+        if detoasted_ptr.is_null() {
+            return None;
+        }
+
+        // Use pgrx varlena helpers to read the detoasted data
+        let total_size = pgrx::varlena::varsize_any(detoasted_ptr as *const _);
+        if total_size < RuVectorHeader::SIZE + pg_sys::VARHDRSZ {
+            pgrx::error!("Invalid vector from storage: size too small ({})", total_size);
+        }
+
+        let data_ptr = pgrx::varlena::vardata_any(detoasted_ptr as *const _) as *const u8;
+        if data_ptr.is_null() {
+            return None;
+        }
+
+        // Read dimensions (at offset 0 from data_ptr)
+        let dimensions = ptr::read_unaligned(data_ptr as *const u16);
+
+        if dimensions as usize > MAX_DIMENSIONS {
+            pgrx::error!(
+                "Vector dimension {} exceeds maximum {}",
+                dimensions,
+                MAX_DIMENSIONS
+            );
+        }
+
+        // Get pointer to f32 data (skip dimensions u16 + padding u16 = 4 bytes)
+        let f32_ptr = data_ptr.add(4) as *const f32;
+
+        // Copy data into Vec
+        let data = std::slice::from_raw_parts(f32_ptr, dimensions as usize).to_vec();
+
+        Some(Self {
+            dimensions: dimensions as u32,
+            data,
+        })
+    }
+}
+
+// ============================================================================
+// ArgAbi and BoxRet Implementations for Native Type Support
+// ============================================================================
+// These implementations allow RuVector to be used directly in #[pg_extern] functions
+
+unsafe impl<'fcx> pgrx::callconv::ArgAbi<'fcx> for RuVector {
+    unsafe fn unbox_arg_unchecked(arg: pgrx::callconv::Arg<'_, 'fcx>) -> Self {
+        // Use the helper method that leverages FromDatum
+        arg.unbox_arg_using_from_datum::<RuVector>()
+            .expect("ruvector argument must not be null")
+    }
+
+    unsafe fn unbox_nullable_arg(arg: pgrx::callconv::Arg<'_, 'fcx>) -> pgrx::nullable::Nullable<Self> {
+        match arg.unbox_arg_using_from_datum::<RuVector>() {
+            Some(v) => pgrx::nullable::Nullable::Valid(v),
+            None => pgrx::nullable::Nullable::Null,
+        }
+    }
+}
+
+unsafe impl pgrx::callconv::BoxRet for RuVector {
+    unsafe fn box_into<'fcx>(self, fcinfo: &mut pgrx::callconv::FcInfo<'fcx>) -> pgrx::datum::Datum<'fcx> {
+        match self.into_datum() {
+            Some(datum) => fcinfo.return_raw_datum(datum),
+            None => fcinfo.return_null(),
+        }
     }
 }
 

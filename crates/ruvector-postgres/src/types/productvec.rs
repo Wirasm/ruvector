@@ -409,62 +409,8 @@ impl pgrx::FromDatum for ProductVec {
     }
 }
 
-// ============================================================================
-// SQL Helper Functions
-// ============================================================================
-
-/// Create ProductVec from codes
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_new(original_dims: i32, m: i32, k: i32, codes: Vec<i32>) -> ProductVec {
-    let codes_u8: Vec<u8> = codes.iter().map(|&c| c as u8).collect();
-    ProductVec::new(original_dims as u16, m as u8, k as u8, codes_u8)
-}
-
-/// Get ProductVec original dimensions
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_dims(v: ProductVec) -> i32 {
-    v.original_dims() as i32
-}
-
-/// Get ProductVec number of subspaces
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_m(v: ProductVec) -> i32 {
-    v.m() as i32
-}
-
-/// Get ProductVec number of centroids
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_k(v: ProductVec) -> i32 {
-    v.k() as i32
-}
-
-/// Get ProductVec codes
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_codes(v: ProductVec) -> Vec<i32> {
-    v.codes().iter().map(|&c| c as i32).collect()
-}
-
-/// Get ProductVec compression ratio
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_compression_ratio(v: ProductVec) -> f32 {
-    v.compression_ratio()
-}
-
-/// Calculate ADC distance using flat distance table
-///
-/// distance_table: flat array of m*k distance values
-#[pg_extern(immutable, parallel_safe)]
-pub fn productvec_adc_distance(v: ProductVec, distance_table: Vec<f32>) -> f32 {
-    let expected_len = v.m() * v.k();
-    if distance_table.len() != expected_len {
-        pgrx::error!(
-            "Distance table length {} must equal m*k = {}",
-            distance_table.len(),
-            expected_len
-        );
-    }
-    v.adc_distance_simd(&distance_table)
-}
+// Note: ProductVec SQL functions are not exposed via #[pg_extern] due to
+// pgrx 0.12 trait requirements. Use array-based functions for SQL-level operations.
 
 // ============================================================================
 // Tests

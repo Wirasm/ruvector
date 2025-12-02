@@ -39,11 +39,11 @@ pub struct HalfVec {
 unsafe impl pgrx::datum::UnboxDatum for HalfVec {
     type As<'src> = HalfVec;
 
-    unsafe fn unbox<'src>(datum: pgrx::pg_sys::Datum) -> Self::As<'src>
+    unsafe fn unbox<'src>(datum: pgrx::datum::Datum<'src>) -> Self::As<'src>
     where
         Self: 'src,
     {
-        let ptr = datum.cast_mut_ptr::<pgrx::pg_sys::varlena>();
+        let ptr = datum.sans_lifetime().cast_mut_ptr::<pgrx::pg_sys::varlena>();
         HalfVec { ptr }
     }
 }
@@ -196,21 +196,21 @@ impl HalfVec {
 }
 
 // ============================================================================
-// PostgreSQL I/O Functions
+// PostgreSQL I/O Functions - Internal use only
 // ============================================================================
+// Note: HalfVec type uses internal SIMD-optimized distance functions.
+// Public SQL functions are defined via raw C calling convention or SQL.
 
-/// Parse HalfVec from text format: [1.0, 2.0, 3.0]
-#[pg_extern(immutable, parallel_safe)]
-pub fn halfvec_from_text(input: &str) -> HalfVec {
+/// Internal: Parse HalfVec from text format: [1.0, 2.0, 3.0]
+pub fn halfvec_parse(input: &str) -> HalfVec {
     match parse_halfvec_string(input) {
         Ok(data) => HalfVec::from_f32(&data),
         Err(e) => pgrx::error!("Invalid halfvec format: {}", e),
     }
 }
 
-/// Format HalfVec to text format
-#[pg_extern(immutable, parallel_safe)]
-pub fn halfvec_to_text(vector: HalfVec) -> String {
+/// Internal: Format HalfVec to text format
+pub fn halfvec_format(vector: &HalfVec) -> String {
     let dims = vector.dimensions();
     let data_ptr = vector.data_ptr();
 
@@ -230,29 +230,11 @@ pub fn halfvec_to_text(vector: HalfVec) -> String {
 }
 
 // ============================================================================
-// Conversion Functions
+// Internal Distance Functions with SIMD Optimization
 // ============================================================================
 
-/// Convert HalfVec to RuVector (f32)
-#[pg_extern(immutable, parallel_safe, name = "halfvec_to_vector")]
-pub fn halfvec_to_vector(halfvec: HalfVec) -> RuVector {
-    let f32_data = halfvec.to_f32();
-    RuVector::from_slice(&f32_data)
-}
-
-/// Convert RuVector to HalfVec
-#[pg_extern(immutable, parallel_safe, name = "vector_to_halfvec")]
-pub fn vector_to_halfvec(vector: RuVector) -> HalfVec {
-    HalfVec::from_f32(vector.as_slice())
-}
-
-// ============================================================================
-// Distance Functions with SIMD Optimization
-// ============================================================================
-
-/// L2 (Euclidean) distance for HalfVec
-#[pg_extern(immutable, parallel_safe, name = "halfvec_l2_distance")]
-pub fn halfvec_l2_distance(a: HalfVec, b: HalfVec) -> f32 {
+/// Internal: L2 (Euclidean) distance for HalfVec
+pub fn halfvec_l2(a: &HalfVec, b: &HalfVec) -> f32 {
     let dims_a = a.dimensions();
     let dims_b = b.dimensions();
 
@@ -260,12 +242,11 @@ pub fn halfvec_l2_distance(a: HalfVec, b: HalfVec) -> f32 {
         pgrx::error!("Vector dimensions must match: {} vs {}", dims_a, dims_b);
     }
 
-    unsafe { halfvec_euclidean_distance_dispatch(&a, &b) }
+    unsafe { halfvec_euclidean_distance_dispatch(a, b) }
 }
 
-/// Cosine distance for HalfVec
-#[pg_extern(immutable, parallel_safe, name = "halfvec_cosine_distance")]
-pub fn halfvec_cosine_distance(a: HalfVec, b: HalfVec) -> f32 {
+/// Internal: Cosine distance for HalfVec
+pub fn halfvec_cosine(a: &HalfVec, b: &HalfVec) -> f32 {
     let dims_a = a.dimensions();
     let dims_b = b.dimensions();
 
@@ -273,12 +254,11 @@ pub fn halfvec_cosine_distance(a: HalfVec, b: HalfVec) -> f32 {
         pgrx::error!("Vector dimensions must match: {} vs {}", dims_a, dims_b);
     }
 
-    unsafe { halfvec_cosine_distance_dispatch(&a, &b) }
+    unsafe { halfvec_cosine_distance_dispatch(a, b) }
 }
 
-/// Inner product distance for HalfVec
-#[pg_extern(immutable, parallel_safe, name = "halfvec_inner_product")]
-pub fn halfvec_inner_product(a: HalfVec, b: HalfVec) -> f32 {
+/// Internal: Inner product distance for HalfVec
+pub fn halfvec_ip(a: &HalfVec, b: &HalfVec) -> f32 {
     let dims_a = a.dimensions();
     let dims_b = b.dimensions();
 
@@ -286,7 +266,7 @@ pub fn halfvec_inner_product(a: HalfVec, b: HalfVec) -> f32 {
         pgrx::error!("Vector dimensions must match: {} vs {}", dims_a, dims_b);
     }
 
-    unsafe { halfvec_inner_product_dispatch(&a, &b) }
+    unsafe { halfvec_inner_product_dispatch(a, b) }
 }
 
 // ============================================================================
@@ -298,9 +278,10 @@ pub fn halfvec_inner_product(a: HalfVec, b: HalfVec) -> f32 {
 unsafe fn halfvec_euclidean_distance_dispatch(a: &HalfVec, b: &HalfVec) -> f32 {
     #[cfg(target_arch = "x86_64")]
     {
-        if is_x86_feature_detected!("avx512fp16") {
-            return halfvec_euclidean_avx512fp16(a, b);
-        }
+        // AVX-512 FP16 requires nightly Rust - disabled for stable builds
+        // if is_x86_feature_detected!("avx512fp16") {
+        //     return halfvec_euclidean_avx512fp16(a, b);
+        // }
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("f16c") {
             return halfvec_euclidean_avx2_f16c(a, b);
         }
@@ -315,9 +296,10 @@ unsafe fn halfvec_euclidean_distance_dispatch(a: &HalfVec, b: &HalfVec) -> f32 {
 unsafe fn halfvec_cosine_distance_dispatch(a: &HalfVec, b: &HalfVec) -> f32 {
     #[cfg(target_arch = "x86_64")]
     {
-        if is_x86_feature_detected!("avx512fp16") {
-            return halfvec_cosine_avx512fp16(a, b);
-        }
+        // AVX-512 FP16 requires nightly Rust - disabled for stable builds
+        // if is_x86_feature_detected!("avx512fp16") {
+        //     return halfvec_cosine_avx512fp16(a, b);
+        // }
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("f16c") {
             return halfvec_cosine_avx2_f16c(a, b);
         }
@@ -331,9 +313,10 @@ unsafe fn halfvec_cosine_distance_dispatch(a: &HalfVec, b: &HalfVec) -> f32 {
 unsafe fn halfvec_inner_product_dispatch(a: &HalfVec, b: &HalfVec) -> f32 {
     #[cfg(target_arch = "x86_64")]
     {
-        if is_x86_feature_detected!("avx512fp16") {
-            return halfvec_inner_product_avx512fp16(a, b);
-        }
+        // AVX-512 FP16 requires nightly Rust - disabled for stable builds
+        // if is_x86_feature_detected!("avx512fp16") {
+        //     return halfvec_inner_product_avx512fp16(a, b);
+        // }
         if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("f16c") {
             return halfvec_inner_product_avx2_f16c(a, b);
         }
@@ -343,132 +326,13 @@ unsafe fn halfvec_inner_product_dispatch(a: &HalfVec, b: &HalfVec) -> f32 {
 }
 
 // ============================================================================
-// AVX-512FP16 Implementations (Native f16 operations)
+// AVX-512FP16 Implementations - DISABLED (requires nightly Rust)
 // ============================================================================
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512fp16")]
-#[inline]
-unsafe fn halfvec_euclidean_avx512fp16(a: &HalfVec, b: &HalfVec) -> f32 {
-    use std::arch::x86_64::*;
-
-    let dims = a.dimensions();
-    let a_ptr = a.data_ptr();
-    let b_ptr = b.data_ptr();
-
-    // Process 32 f16 values at a time (512 bits = 32 * 16 bits)
-    let chunks = dims / 32;
-    let mut sum = _mm512_setzero_ph();
-
-    for i in 0..chunks {
-        let offset = i * 32;
-        // Load f16 values directly
-        let va = _mm512_loadu_ph(a_ptr.add(offset) as *const _);
-        let vb = _mm512_loadu_ph(b_ptr.add(offset) as *const _);
-
-        // Compute difference
-        let diff = _mm512_sub_ph(va, vb);
-
-        // FMA: sum += diff * diff
-        sum = _mm512_fmadd_ph(diff, diff, sum);
-    }
-
-    // Horizontal reduction to get final sum
-    let mut result = _mm512_reduce_add_ph(sum);
-
-    // Handle remainder
-    for i in (chunks * 32)..dims {
-        let a_bits = u16::from_le(*a_ptr.add(i));
-        let b_bits = u16::from_le(*b_ptr.add(i));
-        let a_val = f16::from_bits(a_bits).to_f32();
-        let b_val = f16::from_bits(b_bits).to_f32();
-        let diff = a_val - b_val;
-        result += diff * diff;
-    }
-
-    result.sqrt()
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512fp16")]
-#[inline]
-unsafe fn halfvec_cosine_avx512fp16(a: &HalfVec, b: &HalfVec) -> f32 {
-    use std::arch::x86_64::*;
-
-    let dims = a.dimensions();
-    let a_ptr = a.data_ptr();
-    let b_ptr = b.data_ptr();
-
-    let chunks = dims / 32;
-    let mut dot = _mm512_setzero_ph();
-    let mut norm_a = _mm512_setzero_ph();
-    let mut norm_b = _mm512_setzero_ph();
-
-    for i in 0..chunks {
-        let offset = i * 32;
-        let va = _mm512_loadu_ph(a_ptr.add(offset) as *const _);
-        let vb = _mm512_loadu_ph(b_ptr.add(offset) as *const _);
-
-        dot = _mm512_fmadd_ph(va, vb, dot);
-        norm_a = _mm512_fmadd_ph(va, va, norm_a);
-        norm_b = _mm512_fmadd_ph(vb, vb, norm_b);
-    }
-
-    let mut dot_sum = _mm512_reduce_add_ph(dot);
-    let mut norm_a_sum = _mm512_reduce_add_ph(norm_a);
-    let mut norm_b_sum = _mm512_reduce_add_ph(norm_b);
-
-    // Handle remainder
-    for i in (chunks * 32)..dims {
-        let a_bits = u16::from_le(*a_ptr.add(i));
-        let b_bits = u16::from_le(*b_ptr.add(i));
-        let a_val = f16::from_bits(a_bits).to_f32();
-        let b_val = f16::from_bits(b_bits).to_f32();
-        dot_sum += a_val * b_val;
-        norm_a_sum += a_val * a_val;
-        norm_b_sum += b_val * b_val;
-    }
-
-    let denominator = (norm_a_sum * norm_b_sum).sqrt();
-    if denominator == 0.0 {
-        return 1.0;
-    }
-
-    1.0 - (dot_sum / denominator)
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx512fp16")]
-#[inline]
-unsafe fn halfvec_inner_product_avx512fp16(a: &HalfVec, b: &HalfVec) -> f32 {
-    use std::arch::x86_64::*;
-
-    let dims = a.dimensions();
-    let a_ptr = a.data_ptr();
-    let b_ptr = b.data_ptr();
-
-    let chunks = dims / 32;
-    let mut sum = _mm512_setzero_ph();
-
-    for i in 0..chunks {
-        let offset = i * 32;
-        let va = _mm512_loadu_ph(a_ptr.add(offset) as *const _);
-        let vb = _mm512_loadu_ph(b_ptr.add(offset) as *const _);
-        sum = _mm512_fmadd_ph(va, vb, sum);
-    }
-
-    let mut result = _mm512_reduce_add_ph(sum);
-
-    for i in (chunks * 32)..dims {
-        let a_bits = u16::from_le(*a_ptr.add(i));
-        let b_bits = u16::from_le(*b_ptr.add(i));
-        let a_val = f16::from_bits(a_bits).to_f32();
-        let b_val = f16::from_bits(b_bits).to_f32();
-        result += a_val * b_val;
-    }
-
-    -result
-}
+// Native f16 operations using avx512fp16 require unstable Rust features.
+// When running on CPUs with AVX-512 FP16 support (Sapphire Rapids+), we fall
+// back to AVX2 + F16C which converts f16 to f32 in SIMD registers.
+// To enable native AVX-512 FP16 support, use nightly Rust with:
+//   #![feature(stdarch_x86_avx512_f16)]
 
 // ============================================================================
 // AVX2 + F16C Implementations (Convert to f32 in SIMD registers)

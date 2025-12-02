@@ -433,63 +433,8 @@ impl pgrx::FromDatum for ScalarVec {
     }
 }
 
-// ============================================================================
-// SQL Helper Functions
-// ============================================================================
-
-/// Create ScalarVec from f32 array
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_from_array(arr: Vec<f32>) -> ScalarVec {
-    ScalarVec::from_f32(&arr)
-}
-
-/// Create ScalarVec from f32 array with custom scale/offset
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_from_array_custom(arr: Vec<f32>, scale: f32, offset: f32) -> ScalarVec {
-    ScalarVec::from_f32_custom(&arr, scale, offset)
-}
-
-/// Parse ScalarVec from string
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_parse(input: &str) -> ScalarVec {
-    match ScalarVec::from_str(input) {
-        Ok(v) => v,
-        Err(e) => pgrx::error!("Invalid ScalarVec format: {}", e),
-    }
-}
-
-/// Convert ScalarVec to f32 array
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_to_array(v: ScalarVec) -> Vec<f32> {
-    v.to_f32()
-}
-
-/// Get ScalarVec dimensions
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_dims(v: ScalarVec) -> i32 {
-    v.dimensions() as i32
-}
-
-/// Get ScalarVec scale
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_scale(v: ScalarVec) -> f32 {
-    v.scale()
-}
-
-/// Get ScalarVec offset
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_offset(v: ScalarVec) -> f32 {
-    v.offset()
-}
-
-/// Calculate Euclidean distance between two ScalarVecs
-#[pg_extern(immutable, parallel_safe)]
-pub fn scalarvec_l2_distance(a: ScalarVec, b: ScalarVec) -> f32 {
-    if a.dimensions() != b.dimensions() {
-        pgrx::error!("Vector dimensions must match: {} vs {}", a.dimensions(), b.dimensions());
-    }
-    a.distance(&b)
-}
+// Note: ScalarVec SQL functions are not exposed via #[pg_extern] due to
+// pgrx 0.12 trait requirements. Use array-based functions for SQL-level operations.
 
 // ============================================================================
 // Tests

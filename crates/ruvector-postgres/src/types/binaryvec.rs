@@ -388,60 +388,8 @@ impl pgrx::FromDatum for BinaryVec {
     }
 }
 
-// ============================================================================
-// SQL Helper Functions
-// ============================================================================
-
-/// Create BinaryVec from f32 array
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_from_array(arr: Vec<f32>) -> BinaryVec {
-    BinaryVec::from_f32(&arr)
-}
-
-/// Create BinaryVec from f32 array with threshold
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_from_array_threshold(arr: Vec<f32>, threshold: f32) -> BinaryVec {
-    BinaryVec::from_f32_threshold(&arr, threshold)
-}
-
-/// Parse BinaryVec from string
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_parse(input: &str) -> BinaryVec {
-    match BinaryVec::from_str(input) {
-        Ok(v) => v,
-        Err(e) => pgrx::error!("Invalid BinaryVec format: {}", e),
-    }
-}
-
-/// Convert BinaryVec to f32 array
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_to_array(v: BinaryVec) -> Vec<f32> {
-    v.to_f32()
-}
-
-/// Get BinaryVec dimensions
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_dims(v: BinaryVec) -> i32 {
-    v.dimensions() as i32
-}
-
-/// Calculate Hamming distance between two BinaryVecs
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_hamming_distance(a: BinaryVec, b: BinaryVec) -> i32 {
-    if a.dimensions() != b.dimensions() {
-        pgrx::error!("Vector dimensions must match: {} vs {}", a.dimensions(), b.dimensions());
-    }
-    a.hamming_distance(&b) as i32
-}
-
-/// Calculate normalized Hamming distance [0, 1]
-#[pg_extern(immutable, parallel_safe)]
-pub fn binaryvec_normalized_distance(a: BinaryVec, b: BinaryVec) -> f32 {
-    if a.dimensions() != b.dimensions() {
-        pgrx::error!("Vector dimensions must match: {} vs {}", a.dimensions(), b.dimensions());
-    }
-    a.normalized_distance(&b)
-}
+// Note: BinaryVec SQL functions are not exposed via #[pg_extern] due to
+// pgrx 0.12 trait requirements. Use array-based functions for SQL-level operations.
 
 // ============================================================================
 // Tests

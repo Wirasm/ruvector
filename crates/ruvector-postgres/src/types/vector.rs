@@ -566,41 +566,11 @@ impl pgrx::FromDatum for RuVector {
 }
 
 // ============================================================================
-// SQL Helper Functions
+// SQL Helper Functions - Note: Using array-based functions for pgrx 0.12 compat
 // ============================================================================
-
-/// Create a vector from a float array
-#[pg_extern(immutable, parallel_safe)]
-pub fn ruvector_from_array(arr: Vec<f32>) -> RuVector {
-    if arr.len() > MAX_DIMENSIONS {
-        pgrx::error!("Vector exceeds maximum dimensions ({})", MAX_DIMENSIONS);
-    }
-    RuVector::from_slice(&arr)
-}
-
-/// Get vector as float array
-#[pg_extern(immutable, parallel_safe)]
-pub fn ruvector_to_array(v: RuVector) -> Vec<f32> {
-    v.into_vec()
-}
-
-/// Get vector dimensions
-#[pg_extern(immutable, parallel_safe)]
-pub fn ruvector_dims(v: RuVector) -> i32 {
-    v.dimensions() as i32
-}
-
-/// Get vector L2 norm
-#[pg_extern(immutable, parallel_safe)]
-pub fn ruvector_norm(v: RuVector) -> f32 {
-    v.norm()
-}
-
-/// Normalize vector to unit length
-#[pg_extern(immutable, parallel_safe)]
-pub fn ruvector_normalize(v: RuVector) -> RuVector {
-    v.normalize()
-}
+// The native ruvector type is used through the C-level I/O functions
+// (ruvector_in, ruvector_out, ruvector_recv, ruvector_send) which bypass
+// the pgrx ArgAbi/RetAbi trait requirements.
 
 // ============================================================================
 // Tests
@@ -694,36 +664,5 @@ mod tests {
     }
 }
 
-#[cfg(any(test, feature = "pg_test"))]
-#[pg_schema]
-mod pg_tests {
-    use super::*;
-
-    #[pg_test]
-    fn test_ruvector_from_to_array() {
-        let arr = vec![1.0, 2.0, 3.0, 4.0];
-        let vec = ruvector_from_array(arr.clone());
-        assert_eq!(vec.dimensions(), 4);
-
-        let result = ruvector_to_array(vec);
-        assert_eq!(result, arr);
-    }
-
-    #[pg_test]
-    fn test_ruvector_dims() {
-        let vec = RuVector::from_slice(&[1.0, 2.0, 3.0]);
-        assert_eq!(ruvector_dims(vec), 3);
-    }
-
-    #[pg_test]
-    fn test_ruvector_norm_normalize() {
-        let vec = RuVector::from_slice(&[3.0, 4.0]);
-        assert!((ruvector_norm(vec.clone()) - 5.0).abs() < 1e-6);
-
-        let normalized = ruvector_normalize(vec);
-        assert!((ruvector_norm(normalized) - 1.0).abs() < 1e-6);
-    }
-
-    // Note: I/O functions (ruvector_in, ruvector_out, ruvector_recv, ruvector_send)
-    // are tested via integration tests since they use raw C calling convention
-}
+// Note: PostgreSQL integration tests for the ruvector type are done via
+// SQL-level testing since the type uses raw C calling conventions.

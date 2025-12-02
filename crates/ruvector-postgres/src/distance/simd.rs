@@ -14,19 +14,19 @@ use super::scalar;
 
 /// Check if pointer is aligned to N bytes
 #[inline]
-const fn is_aligned_to(ptr: *const f32, align: usize) -> bool {
+fn is_aligned_to(ptr: *const f32, align: usize) -> bool {
     (ptr as usize) % align == 0
 }
 
 /// Check if both pointers are 64-byte aligned (AVX-512)
 #[inline]
-const fn is_avx512_aligned(a: *const f32, b: *const f32) -> bool {
+fn is_avx512_aligned(a: *const f32, b: *const f32) -> bool {
     is_aligned_to(a, 64) && is_aligned_to(b, 64)
 }
 
 /// Check if both pointers are 32-byte aligned (AVX2)
 #[inline]
-const fn is_avx2_aligned(a: *const f32, b: *const f32) -> bool {
+fn is_avx2_aligned(a: *const f32, b: *const f32) -> bool {
     is_aligned_to(a, 32) && is_aligned_to(b, 32)
 }
 
@@ -704,14 +704,13 @@ pub unsafe fn manhattan_distances_batch(
     }
 }
 
-/// Parallel batch L2 distance calculation using Rayon
+/// Batch L2 distance calculation (sequential, SIMD-optimized)
 ///
 /// # Safety
 /// - `query` must be valid for reads of `len` elements
 /// - All pointers in `vectors` must be valid for reads of `len` elements
 /// - `results` must have length >= `vectors.len()`
 /// - `len` must be > 0
-/// - Pointers must be Send + Sync safe
 #[inline]
 pub unsafe fn l2_distances_batch_parallel(
     query: *const f32,
@@ -719,19 +718,16 @@ pub unsafe fn l2_distances_batch_parallel(
     len: usize,
     results: &mut [f32],
 ) {
-    use rayon::prelude::*;
-
     debug_assert!(results.len() >= vectors.len());
     debug_assert!(!query.is_null() && len > 0);
 
-    results.par_iter_mut()
-        .zip(vectors.par_iter())
-        .for_each(|(result, &vec_ptr)| {
-            *result = l2_distance_ptr(query, vec_ptr, len);
-        });
+    // Sequential loop with SIMD-optimized inner distance
+    for (i, &vec_ptr) in vectors.iter().enumerate() {
+        results[i] = l2_distance_ptr(query, vec_ptr, len);
+    }
 }
 
-/// Parallel batch cosine distance calculation using Rayon
+/// Batch cosine distance calculation (sequential, SIMD-optimized)
 ///
 /// # Safety
 /// - Same safety requirements as `l2_distances_batch_parallel`
@@ -742,16 +738,13 @@ pub unsafe fn cosine_distances_batch_parallel(
     len: usize,
     results: &mut [f32],
 ) {
-    use rayon::prelude::*;
-
     debug_assert!(results.len() >= vectors.len());
     debug_assert!(!query.is_null() && len > 0);
 
-    results.par_iter_mut()
-        .zip(vectors.par_iter())
-        .for_each(|(result, &vec_ptr)| {
-            *result = cosine_distance_ptr(query, vec_ptr, len);
-        });
+    // Sequential loop with SIMD-optimized inner distance
+    for (i, &vec_ptr) in vectors.iter().enumerate() {
+        results[i] = cosine_distance_ptr(query, vec_ptr, len);
+    }
 }
 
 // ============================================================================

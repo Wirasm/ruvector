@@ -1,7 +1,7 @@
 {
   "name": "psycho-symbolic-integration",
-  "version": "0.1.0",
-  "description": "Integration layer combining psycho-symbolic-reasoner with ruvector and agentic-synth for advanced AI reasoning and data generation",
+  "version": "0.2.0",
+  "description": "Unified integration layer combining ultra-fast symbolic AI reasoning with intelligent synthetic data generation for context-aware applications",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -45,7 +45,14 @@
     "ai",
     "vector-database",
     "synthetic-data",
-    "integration"
+    "integration",
+    "sentiment-analysis",
+    "preference-extraction",
+    "symbolic-ai",
+    "neural-symbolic",
+    "data-generation",
+    "goap",
+    "hybrid-ai"
   ],
   "author": "rUv",
   "license": "MIT",
@@ -57,7 +64,7 @@
   "bugs": {
     "url": "https://github.com/ruvnet/ruvector/issues"
   },
-  "homepage": "https://github.com/ruvnet/ruvector#readme",
+  "homepage": "https://ruv.io",
   "files": [
     "dist",
     "src",

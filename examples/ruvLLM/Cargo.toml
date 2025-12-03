@@ -77,6 +77,10 @@ axum = { version = "0.7", optional = true }
 tower = { version = "0.4", optional = true }
 tower-http = { version = "0.5", features = ["cors", "trace"], optional = true }
 
+# N-API bindings for Node.js
+napi = { version = "2.16", features = ["async", "serde-json"], optional = true }
+napi-derive = { version = "2.16", optional = true }
+
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }
 proptest = "1.5"
@@ -93,6 +97,8 @@ server = ["axum", "tower", "tower-http"]
 real-inference = ["candle-core", "candle-nn", "candle-transformers", "hf-hub", "tokenizers", "memmap2", "byteorder", "half", "dirs"]
 # HuggingFace export for learned patterns and LoRA weights
 hf-export = ["ruvector-sona"]
+# N-API bindings for Node.js
+napi = ["dep:napi", "dep:napi-derive"]
 full = ["storage", "metrics", "server", "real-inference", "hf-export"]
 
 [[bench]]
@@ -118,6 +124,7 @@ harness = false
 [lib]
 name = "ruvllm"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "ruvllm-demo"

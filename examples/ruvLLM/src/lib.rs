@@ -73,6 +73,9 @@ pub mod types;
 #[cfg(feature = "real-inference")]
 pub mod inference_real;
 
+#[cfg(feature = "napi")]
+pub mod napi;
+
 // Re-exports
 pub use config::{Config, ConfigBuilder};
 pub use error::{Error, Result};

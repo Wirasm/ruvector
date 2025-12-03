@@ -10,7 +10,17 @@ import { join } from 'path';
 let nativeModule: NativeRuvLLM | null = null;
 
 interface NativeRuvLLM {
+  // Native exports RuvLlmEngine (camelCase), we normalize to RuvLLMEngine
   RuvLLMEngine: new (config?: NativeConfig) => NativeEngine;
+  SimdOperations: new () => NativeSimdOps;
+  version: () => string;
+  hasSimdSupport: () => boolean;
+}
+
+// Raw native module interface (actual export names)
+interface RawNativeModule {
+  RuvLlmEngine?: new (config?: NativeConfig) => NativeEngine;
+  RuvLLMEngine?: new (config?: NativeConfig) => NativeEngine;
   SimdOperations: new () => NativeSimdOps;
   version: () => string;
   hasSimdSupport: () => boolean;
@@ -131,7 +141,14 @@ function loadNativeModule(): NativeRuvLLM | null {
 
   for (const attempt of attempts) {
     try {
-      nativeModule = attempt() as NativeRuvLLM;
+      const raw = attempt() as RawNativeModule;
+      // Normalize: native exports RuvLlmEngine, we expose as RuvLLMEngine
+      nativeModule = {
+        RuvLLMEngine: raw.RuvLLMEngine ?? raw.RuvLlmEngine!,
+        SimdOperations: raw.SimdOperations,
+        version: raw.version,
+        hasSimdSupport: raw.hasSimdSupport,
+      };
       return nativeModule;
     } catch {
       // Continue to next attempt

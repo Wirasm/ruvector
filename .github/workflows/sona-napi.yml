@@ -94,7 +94,7 @@ jobs:
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
         run: |
-          npx napi build --platform --release -p ruvector-sona --manifest-path ../../../crates/sona/Cargo.toml -F napi --target ${{ matrix.target }}
+          npx napi build --platform --release -p ruvector-sona --manifest-path ../../../crates/sona/Cargo.toml --output-dir . -F napi --target ${{ matrix.target }}
 
       - name: List built files
         working-directory: npm/packages/sona

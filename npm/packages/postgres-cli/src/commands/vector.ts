@@ -26,7 +26,111 @@ export interface VectorSearchOptions {
   metric: 'cosine' | 'l2' | 'ip';
 }
 
+export interface VectorDistanceOptions {
+  a: string;
+  b: string;
+  metric: 'cosine' | 'l2' | 'ip';
+}
+
+export interface VectorNormalizeOptions {
+  vector: string;
+}
+
 export class VectorCommands {
+  static async distance(
+    client: RuVectorClient,
+    options: VectorDistanceOptions
+  ): Promise<void> {
+    const spinner = ora('Computing vector distance...').start();
+
+    try {
+      await client.connect();
+
+      const a = JSON.parse(options.a);
+      const b = JSON.parse(options.b);
+
+      let distance: number;
+      let metricName: string;
+
+      switch (options.metric) {
+        case 'l2':
+          distance = await client.l2DistanceArr(a, b);
+          metricName = 'L2 (Euclidean)';
+          break;
+        case 'ip':
+          distance = await client.innerProductArr(a, b);
+          metricName = 'Inner Product';
+          break;
+        case 'cosine':
+        default:
+          distance = await client.cosineDistanceArr(a, b);
+          metricName = 'Cosine';
+          break;
+      }
+
+      spinner.succeed(chalk.green('Distance computed'));
+
+      console.log(chalk.bold.blue('\nVector Distance:'));
+      console.log(chalk.gray('-'.repeat(40)));
+      console.log(`  ${chalk.green('Metric:')} ${metricName}`);
+      console.log(`  ${chalk.green('Distance:')} ${distance.toFixed(6)}`);
+      console.log(`  ${chalk.green('Dimension:')} ${a.length}`);
+
+      // Additional context for cosine distance
+      if (options.metric === 'cosine') {
+        const similarity = 1 - distance;
+        console.log(`  ${chalk.green('Similarity:')} ${similarity.toFixed(6)} (1 - distance)`);
+      }
+    } catch (err) {
+      spinner.fail(chalk.red('Distance computation failed'));
+      console.error(chalk.red((err as Error).message));
+    } finally {
+      await client.disconnect();
+    }
+  }
+
+  static async normalize(
+    client: RuVectorClient,
+    options: VectorNormalizeOptions
+  ): Promise<void> {
+    const spinner = ora('Normalizing vector...').start();
+
+    try {
+      await client.connect();
+
+      const vector = JSON.parse(options.vector);
+      const normalized = await client.vectorNormalize(vector);
+
+      spinner.succeed(chalk.green('Vector normalized'));
+
+      console.log(chalk.bold.blue('\nNormalized Vector:'));
+      console.log(chalk.gray('-'.repeat(40)));
+      console.log(`  ${chalk.green('Original Dimension:')} ${vector.length}`);
+
+      // Compute original norm for reference
+      const originalNorm = Math.sqrt(vector.reduce((sum: number, v: number) => sum + v * v, 0));
+      console.log(`  ${chalk.green('Original Norm:')} ${originalNorm.toFixed(6)}`);
+
+      // Verify normalized norm is ~1
+      const normalizedNorm = Math.sqrt(normalized.reduce((sum: number, v: number) => sum + v * v, 0));
+      console.log(`  ${chalk.green('Normalized Norm:')} ${normalizedNorm.toFixed(6)}`);
+
+      // Display vector (truncated if too long)
+      if (normalized.length <= 10) {
+        console.log(`  ${chalk.green('Result:')} [${normalized.map((v: number) => v.toFixed(4)).join(', ')}]`);
+      } else {
+        const first5 = normalized.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ');
+        const last3 = normalized.slice(-3).map((v: number) => v.toFixed(4)).join(', ');
+        console.log(`  ${chalk.green('Result:')} [${first5}, ..., ${last3}]`);
+      }
+    } catch (err) {
+      spinner.fail(chalk.red('Normalization failed'));
+      console.error(chalk.red((err as Error).message));
+    } finally {
+      await client.disconnect();
+    }
+  }
+
   static async create(
     client: RuVectorClient,
     name: string,

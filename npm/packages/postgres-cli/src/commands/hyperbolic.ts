@@ -1,12 +1,42 @@
 /**
  * Hyperbolic Geometry Commands
  * CLI commands for hyperbolic embedding operations (Poincare ball, Lorentz model)
+ *
+ * NOTE: These functions require the hyperbolic geometry module to be enabled
+ * in the RuVector PostgreSQL extension. Currently in development.
  */
 
 import chalk from 'chalk';
 import ora from 'ora';
 import Table from 'cli-table3';
 import type { RuVectorClient } from '../client.js';
+
+const HYPERBOLIC_REQUIRES_EXTENSION_MSG = `
+${chalk.yellow('Hyperbolic geometry requires the RuVector PostgreSQL extension.')}
+
+Ensure you have:
+  1. Built the ruvector-postgres Docker image
+  2. Started a container with the extension installed
+  3. Run: CREATE EXTENSION ruvector;
+
+Available functions:
+  - ruvector_poincare_distance(a, b, curvature)
+  - ruvector_lorentz_distance(a, b, curvature)
+  - ruvector_mobius_add(a, b, curvature)
+  - ruvector_exp_map(base, tangent, curvature)
+  - ruvector_log_map(base, target, curvature)
+  - ruvector_poincare_to_lorentz(poincare, curvature)
+  - ruvector_lorentz_to_poincare(lorentz, curvature)
+  - ruvector_minkowski_dot(a, b)
+
+${chalk.gray('See: https://github.com/ruvnet/ruvector for setup instructions.')}
+`;
+
+function checkHyperbolicAvailable(): boolean {
+  // Hyperbolic geometry functions are now implemented in the PostgreSQL extension
+  // The functions are available in ruvector--0.1.0.sql
+  return true;
+}
 
 export interface PoincareDistanceOptions {
   a: string;
@@ -48,6 +78,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: PoincareDistanceOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Computing Poincare distance...').start();
 
     try {
@@ -78,6 +113,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: LorentzDistanceOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Computing Lorentz distance...').start();
 
     try {
@@ -108,6 +148,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: MobiusAddOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Computing Mobius addition...').start();
 
     try {
@@ -141,6 +186,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: ExpMapOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Computing exponential map...').start();
 
     try {
@@ -171,6 +221,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: LogMapOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Computing logarithmic map...').start();
 
     try {
@@ -201,6 +256,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: ConvertOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Converting Poincare to Lorentz...').start();
 
     try {
@@ -230,6 +290,11 @@ export class HyperbolicCommands {
     client: RuVectorClient,
     options: ConvertOptions
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Converting Lorentz to Poincare...').start();
 
     try {
@@ -260,6 +325,11 @@ export class HyperbolicCommands {
     a: string,
     b: string
   ): Promise<void> {
+    if (!checkHyperbolicAvailable()) {
+      console.log(HYPERBOLIC_REQUIRES_EXTENSION_MSG);
+      return;
+    }
+
     const spinner = ora('Computing Minkowski inner product...').start();
 
     try {

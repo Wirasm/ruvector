@@ -424,6 +424,342 @@ AS 'MODULE_PATHNAME', 'graph_bipartite_score_wrapper'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 -- ============================================================================
+-- Hyperbolic Geometry Functions
+-- ============================================================================
+
+-- Poincare distance
+CREATE OR REPLACE FUNCTION ruvector_poincare_distance(a real[], b real[], curvature real DEFAULT -1.0)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_poincare_distance_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Lorentz/hyperboloid distance
+CREATE OR REPLACE FUNCTION ruvector_lorentz_distance(a real[], b real[], curvature real DEFAULT -1.0)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_lorentz_distance_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Mobius addition in Poincare ball
+CREATE OR REPLACE FUNCTION ruvector_mobius_add(a real[], b real[], curvature real DEFAULT -1.0)
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_mobius_add_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Exponential map (tangent to manifold)
+CREATE OR REPLACE FUNCTION ruvector_exp_map(base real[], tangent real[], curvature real DEFAULT -1.0)
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_exp_map_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Logarithmic map (manifold to tangent)
+CREATE OR REPLACE FUNCTION ruvector_log_map(base real[], target real[], curvature real DEFAULT -1.0)
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_log_map_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Convert Poincare to Lorentz coordinates
+CREATE OR REPLACE FUNCTION ruvector_poincare_to_lorentz(poincare real[], curvature real DEFAULT -1.0)
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_poincare_to_lorentz_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Convert Lorentz to Poincare coordinates
+CREATE OR REPLACE FUNCTION ruvector_lorentz_to_poincare(lorentz real[], curvature real DEFAULT -1.0)
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_lorentz_to_poincare_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Minkowski inner product
+CREATE OR REPLACE FUNCTION ruvector_minkowski_dot(a real[], b real[])
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_minkowski_dot_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- ============================================================================
+-- Sparse Vector Functions
+-- ============================================================================
+
+-- Create sparse vector from indices and values
+CREATE OR REPLACE FUNCTION ruvector_to_sparse(indices int[], values real[], dim int)
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_to_sparse_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Sparse dot product
+CREATE OR REPLACE FUNCTION ruvector_sparse_dot(a text, b text)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_sparse_dot_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Sparse cosine distance
+CREATE OR REPLACE FUNCTION ruvector_sparse_cosine(a text, b text)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_sparse_cosine_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Sparse euclidean distance
+CREATE OR REPLACE FUNCTION ruvector_sparse_euclidean(a text, b text)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_sparse_euclidean_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Sparse manhattan distance
+CREATE OR REPLACE FUNCTION ruvector_sparse_manhattan(a text, b text)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_sparse_manhattan_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Get number of non-zero elements
+CREATE OR REPLACE FUNCTION ruvector_sparse_nnz(v text)
+RETURNS int
+AS 'MODULE_PATHNAME', 'ruvector_sparse_nnz_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Get sparse vector dimension
+CREATE OR REPLACE FUNCTION ruvector_sparse_dim(v text)
+RETURNS int
+AS 'MODULE_PATHNAME', 'ruvector_sparse_dim_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Get sparse vector norm
+CREATE OR REPLACE FUNCTION ruvector_sparse_norm(v text)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_sparse_norm_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Keep top k elements
+CREATE OR REPLACE FUNCTION ruvector_sparse_top_k(v text, k int)
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_sparse_top_k_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Prune elements below threshold
+CREATE OR REPLACE FUNCTION ruvector_sparse_prune(v text, threshold real)
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_sparse_prune_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Convert dense to sparse
+CREATE OR REPLACE FUNCTION ruvector_dense_to_sparse(v real[])
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_dense_to_sparse_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Convert sparse to dense
+CREATE OR REPLACE FUNCTION ruvector_sparse_to_dense(v text)
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_sparse_to_dense_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- BM25 scoring
+CREATE OR REPLACE FUNCTION ruvector_sparse_bm25(query text, doc text, doc_len int, avg_doc_len real, k1 real DEFAULT 1.2, b real DEFAULT 0.75)
+RETURNS real
+AS 'MODULE_PATHNAME', 'ruvector_sparse_bm25_wrapper'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+-- ============================================================================
+-- GNN (Graph Neural Network) Functions
+-- ============================================================================
+
+-- GCN forward pass
+CREATE OR REPLACE FUNCTION ruvector_gcn_forward(features real[][], src int[], dst int[], weights real[], out_dim int)
+RETURNS real[][]
+AS 'MODULE_PATHNAME', 'ruvector_gcn_forward_wrapper'
+LANGUAGE C IMMUTABLE PARALLEL SAFE;
+
+-- GraphSAGE forward pass
+CREATE OR REPLACE FUNCTION ruvector_graphsage_forward(features real[][], src int[], dst int[], out_dim int, sample_size int DEFAULT 10)
+RETURNS real[][]
+AS 'MODULE_PATHNAME', 'ruvector_graphsage_forward_wrapper'
+LANGUAGE C IMMUTABLE PARALLEL SAFE;
+
+-- GAT (Graph Attention) forward pass
+CREATE OR REPLACE FUNCTION ruvector_gat_forward(features real[][], src int[], dst int[], out_dim int, num_heads int DEFAULT 4)
+RETURNS real[][]
+AS 'MODULE_PATHNAME', 'ruvector_gat_forward_wrapper'
+LANGUAGE C IMMUTABLE PARALLEL SAFE;
+
+-- Message passing aggregate
+CREATE OR REPLACE FUNCTION ruvector_message_aggregate(messages real[][], aggregation text DEFAULT 'mean')
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_message_aggregate_wrapper'
+LANGUAGE C IMMUTABLE PARALLEL SAFE;
+
+-- Readout function
+CREATE OR REPLACE FUNCTION ruvector_gnn_readout(node_embeddings real[][], readout_type text DEFAULT 'mean')
+RETURNS real[]
+AS 'MODULE_PATHNAME', 'ruvector_gnn_readout_wrapper'
+LANGUAGE C IMMUTABLE PARALLEL SAFE;
+
+-- ============================================================================
+-- Routing/Agent Functions (Tiny Dancer)
+-- ============================================================================
+
+-- Register an agent
+CREATE OR REPLACE FUNCTION ruvector_register_agent(name text, agent_type text, capabilities text[], cost_per_request real, avg_latency_ms real, quality_score real)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_register_agent_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Register agent with full config
+CREATE OR REPLACE FUNCTION ruvector_register_agent_full(config jsonb)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_register_agent_full_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Update agent metrics
+CREATE OR REPLACE FUNCTION ruvector_update_agent_metrics(name text, latency_ms real, success boolean, quality real DEFAULT NULL)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_update_agent_metrics_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Remove agent
+CREATE OR REPLACE FUNCTION ruvector_remove_agent(name text)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_remove_agent_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Set agent active status
+CREATE OR REPLACE FUNCTION ruvector_set_agent_active(name text, is_active boolean)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_set_agent_active_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Route request to best agent
+CREATE OR REPLACE FUNCTION ruvector_route(embedding real[], optimize_for text DEFAULT 'balanced', constraints jsonb DEFAULT NULL)
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_route_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- List all agents
+CREATE OR REPLACE FUNCTION ruvector_list_agents()
+RETURNS SETOF jsonb
+AS 'MODULE_PATHNAME', 'ruvector_list_agents_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Get agent details
+CREATE OR REPLACE FUNCTION ruvector_get_agent(name text)
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_get_agent_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Find agents by capability
+CREATE OR REPLACE FUNCTION ruvector_find_agents_by_capability(capability text, max_results int DEFAULT 10)
+RETURNS SETOF jsonb
+AS 'MODULE_PATHNAME', 'ruvector_find_agents_by_capability_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Get routing statistics
+CREATE OR REPLACE FUNCTION ruvector_routing_stats()
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_routing_stats_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Clear all agents
+CREATE OR REPLACE FUNCTION ruvector_clear_agents()
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_clear_agents_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- ============================================================================
+-- Learning/ReasoningBank Functions
+-- ============================================================================
+
+-- Enable learning for a table
+CREATE OR REPLACE FUNCTION ruvector_enable_learning(table_name text, config jsonb DEFAULT NULL)
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_enable_learning_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Record feedback for learning
+CREATE OR REPLACE FUNCTION ruvector_record_feedback(table_name text, query_vector real[], relevant_ids bigint[], irrelevant_ids bigint[])
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_record_feedback_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Get learning statistics
+CREATE OR REPLACE FUNCTION ruvector_learning_stats(table_name text)
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_learning_stats_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Auto-tune search parameters
+CREATE OR REPLACE FUNCTION ruvector_auto_tune(table_name text, optimize_for text DEFAULT 'balanced', sample_queries real[][] DEFAULT NULL)
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_auto_tune_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Extract query patterns
+CREATE OR REPLACE FUNCTION ruvector_extract_patterns(table_name text, num_clusters int DEFAULT 10)
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_extract_patterns_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Get optimized search parameters for query
+CREATE OR REPLACE FUNCTION ruvector_get_search_params(table_name text, query_vector real[])
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_get_search_params_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Clear learning data
+CREATE OR REPLACE FUNCTION ruvector_clear_learning(table_name text)
+RETURNS text
+AS 'MODULE_PATHNAME', 'ruvector_clear_learning_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- ============================================================================
+-- Graph/Cypher Functions
+-- ============================================================================
+
+-- Create a new graph
+CREATE OR REPLACE FUNCTION ruvector_create_graph(name text)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_create_graph_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Execute Cypher query
+CREATE OR REPLACE FUNCTION ruvector_cypher(graph_name text, query text, params jsonb DEFAULT NULL)
+RETURNS SETOF jsonb
+AS 'MODULE_PATHNAME', 'ruvector_cypher_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Add node to graph
+CREATE OR REPLACE FUNCTION ruvector_add_node(graph_name text, labels text[], properties jsonb)
+RETURNS bigint
+AS 'MODULE_PATHNAME', 'ruvector_add_node_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Add edge to graph
+CREATE OR REPLACE FUNCTION ruvector_add_edge(graph_name text, source_id bigint, target_id bigint, edge_type text, properties jsonb)
+RETURNS bigint
+AS 'MODULE_PATHNAME', 'ruvector_add_edge_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Find shortest path
+CREATE OR REPLACE FUNCTION ruvector_shortest_path(graph_name text, start_id bigint, end_id bigint, max_hops int DEFAULT 10)
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_shortest_path_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Get graph statistics
+CREATE OR REPLACE FUNCTION ruvector_graph_stats(graph_name text)
+RETURNS jsonb
+AS 'MODULE_PATHNAME', 'ruvector_graph_stats_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- List all graphs
+CREATE OR REPLACE FUNCTION ruvector_list_graphs()
+RETURNS text[]
+AS 'MODULE_PATHNAME', 'ruvector_list_graphs_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- Delete a graph
+CREATE OR REPLACE FUNCTION ruvector_delete_graph(graph_name text)
+RETURNS boolean
+AS 'MODULE_PATHNAME', 'ruvector_delete_graph_wrapper'
+LANGUAGE C VOLATILE PARALLEL SAFE;
+
+-- ============================================================================
 -- Comments
 -- ============================================================================
 

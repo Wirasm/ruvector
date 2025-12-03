@@ -1,11 +1,120 @@
 /**
  * RuVector PostgreSQL Client
  * Comprehensive wrapper for PostgreSQL connections with RuVector extension
+ *
+ * Features:
+ * - Connection pooling with configurable limits
+ * - Automatic retry with exponential backoff
+ * - Batch operations for bulk inserts
+ * - SQL injection protection
+ * - Input validation
  */
 
 import pg from 'pg';
 
 const { Pool } = pg;
+
+// ============================================================================
+// Configuration
+// ============================================================================
+
+export interface PoolConfig {
+  maxConnections?: number;
+  idleTimeoutMs?: number;
+  connectionTimeoutMs?: number;
+  statementTimeoutMs?: number;
+}
+
+export interface RetryConfig {
+  maxRetries?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+}
+
+const DEFAULT_POOL_CONFIG: Required<PoolConfig> = {
+  maxConnections: 10,
+  idleTimeoutMs: 30000,
+  connectionTimeoutMs: 5000,
+  statementTimeoutMs: 30000,
+};
+
+const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
+  maxRetries: 3,
+  baseDelayMs: 100,
+  maxDelayMs: 5000,
+};
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Validate identifier (table/column name) to prevent SQL injection
+ */
+function validateIdentifier(name: string): string {
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+    throw new Error(`Invalid identifier: ${name}. Must be alphanumeric with underscores.`);
+  }
+  if (name.length > 63) {
+    throw new Error(`Identifier too long: ${name}. Max 63 characters.`);
+  }
+  return name;
+}
+
+/**
+ * Quote identifier for safe SQL usage
+ */
+function quoteIdentifier(name: string): string {
+  return `"${validateIdentifier(name).replace(/"/g, '""')}"`;
+}
+
+/**
+ * Validate vector dimensions
+ */
+function validateVector(vector: number[], expectedDim?: number): void {
+  if (!Array.isArray(vector)) {
+    throw new Error('Vector must be an array');
+  }
+  if (vector.length === 0) {
+    throw new Error('Vector cannot be empty');
+  }
+  if (vector.some(v => typeof v !== 'number' || !Number.isFinite(v))) {
+    throw new Error('Vector must contain only finite numbers');
+  }
+  if (expectedDim !== undefined && vector.length !== expectedDim) {
+    throw new Error(`Vector dimension mismatch: expected ${expectedDim}, got ${vector.length}`);
+  }
+}
+
+/**
+ * Sleep for exponential backoff
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Check if error is retryable
+ */
+function isRetryableError(err: Error): boolean {
+  const code = (err as { code?: string }).code;
+  // Retryable PostgreSQL error codes
+  const retryableCodes = [
+    '08000', // connection_exception
+    '08003', // connection_does_not_exist
+    '08006', // connection_failure
+    '40001', // serialization_failure
+    '40P01', // deadlock_detected
+    '57P01', // admin_shutdown
+    '57P02', // crash_shutdown
+    '57P03', // cannot_connect_now
+  ];
+  return code !== undefined && retryableCodes.includes(code);
+}
+
+// ============================================================================
+// Interfaces
+// ============================================================================
 
 export interface RuVectorInfo {
   version: string;
@@ -151,17 +260,34 @@ export interface MemoryStats {
 export class RuVectorClient {
   private pool: InstanceType<typeof Pool> | null = null;
   private connectionString: string;
+  private poolConfig: Required<PoolConfig>;
+  private retryConfig: Required<RetryConfig>;
 
-  constructor(connectionString: string) {
+  constructor(
+    connectionString: string,
+    poolConfig?: PoolConfig,
+    retryConfig?: RetryConfig
+  ) {
     this.connectionString = connectionString;
+    this.poolConfig = { ...DEFAULT_POOL_CONFIG, ...poolConfig };
+    this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
   }
 
   async connect(): Promise<void> {
     this.pool = new Pool({
       connectionString: this.connectionString,
+      max: this.poolConfig.maxConnections,
+      idleTimeoutMillis: this.poolConfig.idleTimeoutMs,
+      connectionTimeoutMillis: this.poolConfig.connectionTimeoutMs,
     });
+
+    // Test connection and set statement timeout
     const client = await this.pool.connect();
-    client.release();
+    try {
+      await client.query(`SET statement_timeout = ${this.poolConfig.statementTimeoutMs}`);
+    } finally {
+      client.release();
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -171,19 +297,67 @@ export class RuVectorClient {
     }
   }
 
-  async query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
+  /**
+   * Execute query with automatic retry on transient errors
+   */
+  private async queryWithRetry<T extends pg.QueryResultRow>(
+    sql: string,
+    params?: unknown[]
+  ): Promise<pg.QueryResult<T>> {
     if (!this.pool) {
       throw new Error('Not connected to database');
     }
-    const result = await this.pool.query(sql, params);
-    return result.rows as T[];
+
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
+      try {
+        return await this.pool.query<T>(sql, params);
+      } catch (err) {
+        lastError = err as Error;
+        if (!isRetryableError(lastError) || attempt === this.retryConfig.maxRetries) {
+          throw lastError;
+        }
+        // Exponential backoff with jitter
+        const delay = Math.min(
+          this.retryConfig.baseDelayMs * Math.pow(2, attempt) + Math.random() * 100,
+          this.retryConfig.maxDelayMs
+        );
+        await sleep(delay);
+      }
+    }
+    throw lastError;
+  }
+
+  async query<T extends pg.QueryResultRow = pg.QueryResultRow>(sql: string, params?: unknown[]): Promise<T[]> {
+    const result = await this.queryWithRetry<T>(sql, params);
+    return result.rows;
   }
 
   async execute(sql: string, params?: unknown[]): Promise<void> {
+    await this.queryWithRetry(sql, params);
+  }
+
+  /**
+   * Execute multiple statements in a transaction
+   */
+  async transaction<T>(
+    fn: (client: pg.PoolClient) => Promise<T>
+  ): Promise<T> {
     if (!this.pool) {
       throw new Error('Not connected to database');
     }
-    await this.pool.query(sql, params);
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await fn(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   // ============================================================================
@@ -267,22 +441,29 @@ export class RuVectorClient {
     dimensions: number,
     indexType: 'hnsw' | 'ivfflat' = 'hnsw'
   ): Promise<void> {
+    const safeName = quoteIdentifier(name);
+    const safeIdxName = quoteIdentifier(`${name}_id_idx`);
+
+    if (dimensions < 1 || dimensions > 65535) {
+      throw new Error('Dimensions must be between 1 and 65535');
+    }
+
     // Use ruvector type (native RuVector extension type)
     // ruvector is a variable-length type, dimensions stored in metadata
     await this.execute(`
-      CREATE TABLE IF NOT EXISTS ${name} (
+      CREATE TABLE IF NOT EXISTS ${safeName} (
         id SERIAL PRIMARY KEY,
         embedding ruvector,
-        dimensions INT DEFAULT ${dimensions},
+        dimensions INT DEFAULT $1,
         metadata JSONB,
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
-    `);
+    `, [dimensions]);
 
     // Note: HNSW/IVFFlat indexes require additional index implementation
     // For now, create a simple btree index on id for fast lookups
     await this.execute(`
-      CREATE INDEX IF NOT EXISTS ${name}_id_idx ON ${name} (id)
+      CREATE INDEX IF NOT EXISTS ${safeIdxName} ON ${safeName} (id)
     `);
   }
 
@@ -291,11 +472,56 @@ export class RuVectorClient {
     vector: number[],
     metadata?: Record<string, unknown>
   ): Promise<number> {
+    validateVector(vector);
+    const safeName = quoteIdentifier(table);
+
     const result = await this.query<{ id: number }>(
-      `INSERT INTO ${table} (embedding, metadata) VALUES ($1, $2) RETURNING id`,
+      `INSERT INTO ${safeName} (embedding, metadata) VALUES ($1::ruvector, $2) RETURNING id`,
       [`[${vector.join(',')}]`, metadata ? JSON.stringify(metadata) : null]
     );
     return result[0].id;
+  }
+
+  /**
+   * Batch insert vectors (10-100x faster than individual inserts)
+   */
+  async insertVectorsBatch(
+    table: string,
+    vectors: Array<{ vector: number[]; metadata?: Record<string, unknown> }>,
+    batchSize = 100
+  ): Promise<number[]> {
+    const safeName = quoteIdentifier(table);
+    const ids: number[] = [];
+
+    // Process in batches
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      const batch = vectors.slice(i, i + batchSize);
+
+      // Validate all vectors in batch
+      for (const item of batch) {
+        validateVector(item.vector);
+      }
+
+      // Build multi-row INSERT
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+
+      batch.forEach((item, idx) => {
+        const base = idx * 2;
+        placeholders.push(`($${base + 1}::ruvector, $${base + 2})`);
+        values.push(`[${item.vector.join(',')}]`);
+        values.push(item.metadata ? JSON.stringify(item.metadata) : null);
+      });
+
+      const result = await this.query<{ id: number }>(
+        `INSERT INTO ${safeName} (embedding, metadata) VALUES ${placeholders.join(', ')} RETURNING id`,
+        values
+      );
+
+      ids.push(...result.map(r => r.id));
+    }
+
+    return ids;
   }
 
   async searchVectors(
@@ -304,17 +530,74 @@ export class RuVectorClient {
     topK = 10,
     metric: 'cosine' | 'l2' | 'ip' = 'cosine'
   ): Promise<VectorSearchResult[]> {
+    validateVector(query);
+    const safeName = quoteIdentifier(table);
     const distanceOp = metric === 'cosine' ? '<=>' : metric === 'l2' ? '<->' : '<#>';
 
     const results = await this.query<VectorSearchResult>(
-      `SELECT id, embedding ${distanceOp} $1 as distance, metadata
-       FROM ${table}
-       ORDER BY embedding ${distanceOp} $1
+      `SELECT id, embedding ${distanceOp} $1::ruvector as distance, metadata
+       FROM ${safeName}
+       ORDER BY embedding ${distanceOp} $1::ruvector
        LIMIT $2`,
       [`[${query.join(',')}]`, topK]
     );
 
     return results;
+  }
+
+  // ============================================================================
+  // Direct Distance Functions (use available SQL functions)
+  // ============================================================================
+
+  /**
+   * Compute cosine distance using array-based function (available in current SQL)
+   */
+  async cosineDistanceArr(a: number[], b: number[]): Promise<number> {
+    validateVector(a);
+    validateVector(b, a.length);
+    const result = await this.query<{ cosine_distance_arr: number }>(
+      'SELECT cosine_distance_arr($1::real[], $2::real[])',
+      [a, b]
+    );
+    return result[0].cosine_distance_arr;
+  }
+
+  /**
+   * Compute L2 distance using array-based function (available in current SQL)
+   */
+  async l2DistanceArr(a: number[], b: number[]): Promise<number> {
+    validateVector(a);
+    validateVector(b, a.length);
+    const result = await this.query<{ l2_distance_arr: number }>(
+      'SELECT l2_distance_arr($1::real[], $2::real[])',
+      [a, b]
+    );
+    return result[0].l2_distance_arr;
+  }
+
+  /**
+   * Compute inner product using array-based function (available in current SQL)
+   */
+  async innerProductArr(a: number[], b: number[]): Promise<number> {
+    validateVector(a);
+    validateVector(b, a.length);
+    const result = await this.query<{ inner_product_arr: number }>(
+      'SELECT inner_product_arr($1::real[], $2::real[])',
+      [a, b]
+    );
+    return result[0].inner_product_arr;
+  }
+
+  /**
+   * Normalize a vector using array-based function (available in current SQL)
+   */
+  async vectorNormalize(v: number[]): Promise<number[]> {
+    validateVector(v);
+    const result = await this.query<{ vector_normalize: number[] }>(
+      'SELECT vector_normalize($1::real[])',
+      [v]
+    );
+    return result[0].vector_normalize;
   }
 
   // ============================================================================

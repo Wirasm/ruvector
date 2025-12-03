@@ -76,6 +76,26 @@ vector
     await VectorCommands.search(client, table, options);
   });
 
+vector
+  .command('distance')
+  .description('Compute distance between two vectors')
+  .requiredOption('-a, --a <vector>', 'First vector as JSON array')
+  .requiredOption('-b, --b <vector>', 'Second vector as JSON array')
+  .option('-m, --metric <type>', 'Distance metric (cosine, l2, ip)', 'cosine')
+  .action(async (options) => {
+    const client = new RuVectorClient(program.opts().connection);
+    await VectorCommands.distance(client, options);
+  });
+
+vector
+  .command('normalize')
+  .description('Normalize a vector to unit length')
+  .requiredOption('--vector <array>', 'Vector as JSON array')
+  .action(async (options) => {
+    const client = new RuVectorClient(program.opts().connection);
+    await VectorCommands.normalize(client, options);
+  });
+
 // ============================================================================
 // Sparse Vector Operations
 // ============================================================================

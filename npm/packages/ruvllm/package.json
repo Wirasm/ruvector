@@ -60,6 +60,9 @@
     "self-improve": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench.ts",
     "self-improve:quick": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench.ts --quick",
     "self-improve:full": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench.ts --full",
+    "self-improve:v2": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v2.ts",
+    "self-improve:v2:quick": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v2.ts --quick",
+    "self-improve:v2:full": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v2.ts --full",
     "verify-checkpoint": "npx ts-node --project benchmarks/tsconfig.json benchmarks/verify-checkpoint.ts"
   },
   "devDependencies": {

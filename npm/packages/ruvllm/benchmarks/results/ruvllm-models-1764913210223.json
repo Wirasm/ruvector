@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-12-05T05:40:10.222Z",
+  "models": [
+    {
+      "name": "ruvllm-small",
+      "accuracy": 0.29365079365079366,
+      "correct": 37
+    },
+    {
+      "name": "ruvllm-large",
+      "accuracy": 0.2857142857142857,
+      "correct": 36
+    },
+    {
+      "name": "v14-hints",
+      "accuracy": 0.2777777777777778,
+      "correct": 35
+    },
+    {
+      "name": "ruvllm-medium",
+      "accuracy": 0.2777777777777778,
+      "correct": 35
+    },
+    {
+      "name": "baseline",
+      "accuracy": 0.11904761904761904,
+      "correct": 15
+    }
+  ],
+  "ensemble": {
+    "accuracy": 0.2857142857142857,
+    "correct": 36
+  },
+  "dataInfo": {
+    "total": 300,
+    "train": 174,
+    "test": 126,
+    "source": "princeton-nlp/SWE-bench_Lite"
+  },
+  "provenance": {
+    "hash": "7c34a071f3e52fb140f921bca39fc82c"
+  }
+}

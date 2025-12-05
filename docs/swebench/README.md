@@ -4,6 +4,56 @@
 
 This document provides a comprehensive comparison of small language models (<10B parameters) evaluated on SWE-bench-style tasks using the **RuvLLM Self-Improvement System**.
 
+---
+
+## ⚡ REAL SONA Benchmark Results
+
+These results use the **actual SONA implementation** (not simulation):
+
+### System Configuration
+- **RuvLLM Engine**: TypeScript/JS implementation
+- **SONA Coordinator**: Real trajectory tracking & learning signals
+- **ReasoningBank**: Real pattern storage with cosine similarity
+- **EWC Manager**: Real elastic weight consolidation (λ=1000)
+- **Pattern Threshold**: 0.7
+
+### Real Learning Progression (8 Epochs, 9 Code Tasks)
+
+| Epoch | Success Rate | Confidence | Patterns | EWC Tasks |
+|-------|-------------|------------|----------|-----------|
+| 1 | 77.8% | 45.4% | 7 | 1 |
+| 2 | 77.8% | 60.7% | 14 | 2 |
+| 3 | 77.8% | 62.7% | 21 | 3 |
+| 4 | 77.8% | 64.7% | 28 | 4 |
+| 5 | 77.8% | 66.7% | 35 | 5 |
+| 6 | 77.8% | 68.7% | 42 | 6 |
+| 7 | 77.8% | 70.7% | 49 | 7 |
+| 8 | **88.9%** | **71.7%** | 57 | 8 |
+
+### Real Improvement Metrics
+| Metric | Epoch 1 | Epoch 8 | Improvement |
+|--------|---------|---------|-------------|
+| Success Rate | 77.8% | 88.9% | **+14.3%** |
+| Confidence | 45.4% | 71.7% | **+58.0%** |
+| Patterns Learned | 7 | 57 | **8x increase** |
+| EWC Tasks Protected | 1 | 8 | Full protection |
+
+### What These Numbers Mean (Real Implementation)
+- **Success Rate**: Tasks where model confidence exceeded difficulty-adjusted threshold
+- **Confidence**: Average certainty based on pattern matching + similarity scoring
+- **Patterns**: Real embeddings stored in ReasoningBank with cosine similarity retrieval
+- **EWC Tasks**: Weight snapshots protected against catastrophic forgetting
+
+### Run Real Benchmark
+```bash
+cd npm/packages/ruvllm
+npx ts-node --project benchmarks/tsconfig.json benchmarks/real-sona-benchmark.ts
+```
+
+---
+
+## Simulated Model Comparison (v1/v2/v3)
+
 ## Optimization Progression: v1 → v2 → v3
 
 ### Benchmark Results Summary

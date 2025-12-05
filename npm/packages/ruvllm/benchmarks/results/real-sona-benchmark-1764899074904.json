@@ -1,0 +1,108 @@
+{
+  "timestamp": "2025-12-05T01:44:34.903Z",
+  "version": "0.1.0-js",
+  "nativeLoaded": false,
+  "simdCapabilities": [
+    "Scalar (fallback)"
+  ],
+  "config": {
+    "epochs": 8,
+    "tasks": 9,
+    "ewcLambda": 1000,
+    "patternThreshold": 0.7
+  },
+  "epochResults": [
+    {
+      "epoch": 1,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.454148898198158,
+      "patternsLearned": 7,
+      "ewcTasksProtected": 1,
+      "trajectoryCount": 0,
+      "latencyMs": 4
+    },
+    {
+      "epoch": 2,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.6074822315314914,
+      "patternsLearned": 14,
+      "ewcTasksProtected": 2,
+      "trajectoryCount": 0,
+      "latencyMs": 5
+    },
+    {
+      "epoch": 3,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.6274822315314915,
+      "patternsLearned": 21,
+      "ewcTasksProtected": 3,
+      "trajectoryCount": 0,
+      "latencyMs": 3
+    },
+    {
+      "epoch": 4,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.6474822315314914,
+      "patternsLearned": 28,
+      "ewcTasksProtected": 4,
+      "trajectoryCount": 0,
+      "latencyMs": 5
+    },
+    {
+      "epoch": 5,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.6674822315314914,
+      "patternsLearned": 35,
+      "ewcTasksProtected": 5,
+      "trajectoryCount": 0,
+      "latencyMs": 5
+    },
+    {
+      "epoch": 6,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.6874822315314915,
+      "patternsLearned": 42,
+      "ewcTasksProtected": 6,
+      "trajectoryCount": 0,
+      "latencyMs": 4
+    },
+    {
+      "epoch": 7,
+      "tasksCompleted": 9,
+      "successRate": 0.7777777777777778,
+      "avgConfidence": 0.7074822315314915,
+      "patternsLearned": 49,
+      "ewcTasksProtected": 7,
+      "trajectoryCount": 0,
+      "latencyMs": 6
+    },
+    {
+      "epoch": 8,
+      "tasksCompleted": 9,
+      "successRate": 0.8888888888888888,
+      "avgConfidence": 0.7174822315314915,
+      "patternsLearned": 57,
+      "ewcTasksProtected": 8,
+      "trajectoryCount": 0,
+      "latencyMs": 3
+    }
+  ],
+  "finalStats": {
+    "totalQueries": 0,
+    "memoryNodes": 72,
+    "patternsLearned": 57,
+    "patternSuccessRate": 1,
+    "ewcTasksProtected": 8,
+    "ewcForgettingRate": 0.5506710358827784
+  },
+  "improvement": {
+    "successRate": "14.3%",
+    "confidence": "58.0%"
+  }
+}

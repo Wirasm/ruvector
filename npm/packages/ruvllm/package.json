@@ -73,6 +73,12 @@
     "swe-bench:real-ruvllm": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-real-ruvllm.ts",
     "swe-bench:small-models": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-small-models-optimized.ts",
     "swe-bench:targeted": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-targeted-training.ts",
+    "swe-bench:optimized": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimized-training.ts",
+    "swe-bench:optimized:v2": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimized-training-v2.ts",
+    "swe-bench:optimized:v3": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimized-training-v3.ts",
+    "swe-bench:hyperbolic": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-hyperbolic-v4.ts",
+    "swe-bench:transparent": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-transparent-v5.ts",
+    "swe-bench:optimal": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimal-v6.ts",
     "verify-checkpoint": "npx ts-node --project benchmarks/tsconfig.json benchmarks/verify-checkpoint.ts"
   },
   "devDependencies": {

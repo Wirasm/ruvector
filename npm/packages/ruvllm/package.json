@@ -60,30 +60,10 @@
     "self-improve": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench.ts",
     "self-improve:quick": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench.ts --quick",
     "self-improve:full": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench.ts --full",
-    "self-improve:v2": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v2.ts",
-    "self-improve:v2:quick": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v2.ts --quick",
-    "self-improve:v2:full": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v2.ts --full",
-    "self-improve:v3": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v3.ts",
-    "self-improve:v3:quick": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v3.ts --quick",
-    "self-improve:v3:full": "npx ts-node --project benchmarks/tsconfig.json benchmarks/ruvllm-self-improvement-bench-v3.ts --full",
-    "benchmark:real": "npx ts-node --project benchmarks/tsconfig.json benchmarks/real-sona-benchmark.ts",
-    "swe-bench:real": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-real-sona.ts",
-    "swe-bench:real:v2": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-real-sona-v2.ts",
-    "swe-bench:exotic": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-exotic-ed25519.ts",
-    "swe-bench:real-ruvllm": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-real-ruvllm.ts",
-    "swe-bench:small-models": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-small-models-optimized.ts",
-    "swe-bench:targeted": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-targeted-training.ts",
-    "swe-bench:optimized": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimized-training.ts",
-    "swe-bench:optimized:v2": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimized-training-v2.ts",
-    "swe-bench:optimized:v3": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimized-training-v3.ts",
-    "swe-bench:hyperbolic": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-hyperbolic-v4.ts",
-    "swe-bench:transparent": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-transparent-v5.ts",
-    "swe-bench:optimal": "npx ts-node --project benchmarks/tsconfig.json benchmarks/swe-bench-optimal-v6.ts",
     "verify-checkpoint": "npx ts-node --project benchmarks/tsconfig.json benchmarks/verify-checkpoint.ts"
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.0",
-    "@noble/hashes": "^2.0.1",
     "@types/node": "^20.10.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
@@ -94,10 +74,10 @@
     "ora": "^5.4.1"
   },
   "optionalDependencies": {
-    "@ruvector/ruvllm-darwin-arm64": "0.2.0",
-    "@ruvector/ruvllm-darwin-x64": "0.2.0",
-    "@ruvector/ruvllm-linux-arm64-gnu": "0.2.0",
     "@ruvector/ruvllm-linux-x64-gnu": "0.2.0",
+    "@ruvector/ruvllm-linux-arm64-gnu": "0.2.0",
+    "@ruvector/ruvllm-darwin-x64": "0.2.0",
+    "@ruvector/ruvllm-darwin-arm64": "0.2.0",
     "@ruvector/ruvllm-win32-x64-msvc": "0.2.0"
   },
   "keywords": [

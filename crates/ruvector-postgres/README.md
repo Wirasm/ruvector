@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/ruvector-postgres/badge.svg)](https://docs.rs/ruvector-postgres)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14--17-blue.svg)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-available-blue.svg)](https://hub.docker.com/r/ruvector/postgres)
+[![Docker](https://img.shields.io/badge/Docker-available-blue.svg)](https://hub.docker.com/r/ruvnet/ruvector-postgres)
 
 **The most advanced PostgreSQL vector database extension.** A drop-in pgvector replacement with 53+ SQL functions, SIMD acceleration, 39 attention mechanisms, GNN layers, hyperbolic embeddings, and self-learning capabilities.
 
@@ -29,10 +29,14 @@
 ### Docker (Recommended)
 
 ```bash
+# Using Docker Hub
 docker run -d --name ruvector-pg \
   -e POSTGRES_PASSWORD=secret \
   -p 5432:5432 \
-  ruvector/postgres:latest
+  ruvnet/ruvector-postgres:latest
+
+# Or using the CLI
+npx @ruvector/postgres-cli install --method docker
 ```
 
 ### From Source
@@ -411,7 +415,8 @@ Install the CLI for easy management:
 npm install -g @ruvector/postgres-cli
 
 # Commands
-ruvector-pg install                    # Install extension
+ruvector-pg install                    # Install via source (requires Rust)
+ruvector-pg install --method docker    # Install via Docker (recommended)
 ruvector-pg vector create table --dim 384 --index hnsw
 ruvector-pg hyperbolic poincare-distance --a "[0.1,0.2]" --b "[0.3,0.4]"
 ruvector-pg gnn gcn --features "[[...]]" --adj "[[...]]"

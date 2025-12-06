@@ -1,6 +1,6 @@
 {
   "name": "@ruvector/postgres-cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Advanced AI vector database CLI for PostgreSQL - pgvector drop-in replacement with 53+ SQL functions, 39 attention mechanisms, GNN layers, hyperbolic embeddings, and self-learning capabilities",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -86,6 +86,7 @@
   },
   "files": [
     "dist",
+    "benchmarks",
     "README.md"
   ],
   "publishConfig": {

@@ -17,6 +17,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { createRequire } from 'module';
 import { RuVectorClient } from './client.js';
 import { VectorCommands } from './commands/vector.js';
 import { AttentionCommands } from './commands/attention.js';
@@ -30,12 +31,16 @@ import { RoutingCommands } from './commands/routing.js';
 import { QuantizationCommands } from './commands/quantization.js';
 import { InstallCommands } from './commands/install.js';
 
+// Read version from package.json
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json');
+
 const program = new Command();
 
 program
   .name('ruvector-pg')
   .description('RuVector PostgreSQL CLI - Advanced AI Vector Database Extension')
-  .version('0.2.0')
+  .version(pkg.version)
   .option('-c, --connection <string>', 'PostgreSQL connection string', 'postgresql://localhost:5432/ruvector')
   .option('-v, --verbose', 'Enable verbose output');
 

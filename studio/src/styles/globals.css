@@ -1,0 +1,286 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+
+    /* RuVector Custom Variables */
+    --rv-primary: 221.2 83.2% 53.3%;
+    --rv-primary-dark: 221.2 83.2% 43.3%;
+    --rv-accent: 258.3 89.5% 66.3%;
+    --rv-success: 142.1 76.2% 36.3%;
+    --rv-warning: 37.7 92.1% 50.2%;
+    --rv-error: 350 89.2% 60.2%;
+
+    /* Graph and Visualization Colors */
+    --rv-graph-node: 221.2 83.2% 53.3%;
+    --rv-graph-edge: 215 16.3% 46.9%;
+    --rv-graph-highlight: 258.3 89.5% 66.3%;
+    --rv-graph-background: 0 0% 98%;
+
+    /* Editor Colors */
+    --rv-editor-bg: 222.2 47.4% 11.2%;
+    --rv-editor-fg: 210 40% 98%;
+    --rv-editor-selection: 221.2 83.2% 53.3%;
+    --rv-editor-line-number: 215 16.3% 46.9%;
+
+    /* Sidebar Colors */
+    --rv-sidebar-bg: 0 0% 100%;
+    --rv-sidebar-border: 214.3 31.8% 91.4%;
+    --rv-sidebar-hover: 210 40% 96.1%;
+
+    /* Chart Colors */
+    --rv-chart-1: 221.2 83.2% 53.3%;
+    --rv-chart-2: 258.3 89.5% 66.3%;
+    --rv-chart-3: 142.1 76.2% 36.3%;
+    --rv-chart-4: 37.7 92.1% 50.2%;
+    --rv-chart-5: 350 89.2% 60.2%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
+    /* RuVector Dark Mode */
+    --rv-primary: 217.2 91.2% 59.8%;
+    --rv-primary-dark: 217.2 91.2% 49.8%;
+    --rv-accent: 258.3 89.5% 66.3%;
+    --rv-success: 142.1 70.6% 45.3%;
+    --rv-warning: 37.7 92.1% 50.2%;
+    --rv-error: 350 89.2% 60.2%;
+
+    --rv-graph-node: 217.2 91.2% 59.8%;
+    --rv-graph-edge: 215 20.2% 65.1%;
+    --rv-graph-highlight: 258.3 89.5% 66.3%;
+    --rv-graph-background: 222.2 84% 4.9%;
+
+    --rv-editor-bg: 222.2 84% 4.9%;
+    --rv-editor-fg: 210 40% 98%;
+    --rv-editor-selection: 217.2 91.2% 59.8%;
+    --rv-editor-line-number: 215 20.2% 65.1%;
+
+    --rv-sidebar-bg: 222.2 84% 4.9%;
+    --rv-sidebar-border: 217.2 32.6% 17.5%;
+    --rv-sidebar-hover: 217.2 32.6% 17.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl lg:text-5xl;
+  }
+
+  h2 {
+    @apply text-3xl lg:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl lg:text-3xl;
+  }
+
+  h4 {
+    @apply text-xl lg:text-2xl;
+  }
+
+  code {
+    @apply font-mono text-sm bg-muted px-1.5 py-0.5 rounded;
+  }
+
+  pre {
+    @apply font-mono text-sm bg-muted p-4 rounded-lg overflow-x-auto;
+  }
+}
+
+@layer components {
+  /* RuVector Custom Components */
+  .rv-panel {
+    @apply bg-card border border-border rounded-lg shadow-sm;
+  }
+
+  .rv-panel-header {
+    @apply flex items-center justify-between p-4 border-b border-border;
+  }
+
+  .rv-panel-body {
+    @apply p-4;
+  }
+
+  .rv-button-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors;
+  }
+
+  .rv-button-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-md font-medium transition-colors;
+  }
+
+  .rv-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .rv-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors;
+  }
+
+  .rv-badge-primary {
+    @apply rv-badge bg-primary text-primary-foreground;
+  }
+
+  .rv-badge-success {
+    @apply rv-badge bg-success text-white;
+  }
+
+  .rv-badge-warning {
+    @apply rv-badge bg-warning text-white;
+  }
+
+  .rv-badge-error {
+    @apply rv-badge bg-error text-white;
+  }
+
+  /* Graph Visualizations */
+  .rv-graph-container {
+    @apply w-full h-full bg-[hsl(var(--rv-graph-background))] rounded-lg overflow-hidden;
+  }
+
+  .rv-graph-node {
+    @apply fill-[hsl(var(--rv-graph-node))] stroke-[hsl(var(--rv-graph-edge))] stroke-2;
+  }
+
+  .rv-graph-edge {
+    @apply stroke-[hsl(var(--rv-graph-edge))] stroke-1;
+  }
+
+  /* Code Editor */
+  .rv-editor {
+    @apply bg-[hsl(var(--rv-editor-bg))] text-[hsl(var(--rv-editor-fg))] font-mono rounded-lg overflow-hidden;
+  }
+
+  /* Sidebar */
+  .rv-sidebar {
+    @apply bg-[hsl(var(--rv-sidebar-bg))] border-r border-[hsl(var(--rv-sidebar-border))] h-full;
+  }
+
+  .rv-sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2 text-sm font-medium text-foreground/80 hover:bg-[hsl(var(--rv-sidebar-hover))] hover:text-foreground transition-colors cursor-pointer rounded-md;
+  }
+
+  .rv-sidebar-item.active {
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* Loading States */
+  .rv-skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  .rv-spinner {
+    @apply animate-spin rounded-full border-2 border-primary border-t-transparent;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground));
+    border-radius: 4px;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+
+  .glass {
+    @apply bg-background/80 backdrop-blur-md border border-border/50;
+  }
+}
+
+/* Monaco Editor Overrides */
+.monaco-editor {
+  @apply rounded-lg overflow-hidden;
+}
+
+.monaco-editor .margin {
+  @apply bg-[hsl(var(--rv-editor-bg))];
+}
+
+/* React Flow Overrides */
+.react-flow {
+  @apply bg-[hsl(var(--rv-graph-background))];
+}
+
+.react-flow__node {
+  @apply border-2 border-[hsl(var(--rv-graph-node))] rounded-lg shadow-md;
+}
+
+.react-flow__edge-path {
+  @apply stroke-[hsl(var(--rv-graph-edge))];
+}
+
+/* Cytoscape Overrides */
+.cytoscape-container {
+  @apply w-full h-full bg-[hsl(var(--rv-graph-background))] rounded-lg;
+}

@@ -9,6 +9,7 @@
 [![Rust](https://img.shields.io/badge/rust-1.77%2B-orange.svg)](https://www.rust-lang.org)
 [![Build](https://img.shields.io/github/actions/workflow/status/ruvnet/ruvector/ci.yml?branch=main)](https://github.com/ruvnet/ruvector/actions)
 [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](./docs/)
+[![Docker](https://img.shields.io/docker/pulls/ruvnet/ruvector.svg)](https://hub.docker.com/r/ruvnet/ruvector)
 
 **A distributed vector database that learns.** Store embeddings, query with Cypher, scale horizontally with Raft consensus, and let the index improve itself through Graph Neural Networks.
 
@@ -64,8 +65,16 @@ Over time, frequently-accessed paths get reinforced, making common queries faste
 
 ## Quick Start
 
-### One-Line Install
- 
+### Docker (Recommended)
+
+```bash
+# Run RuVector with PostgreSQL extension + npm packages
+docker run -d --name ruvector -p 5432:5432 ruvnet/ruvector:latest
+
+# Connect and start using
+psql -h localhost -U ruvector -d ruvector_db -c "CREATE EXTENSION ruvector; SELECT ruvector_version();"
+# Password: ruvector
+```
 
 ### Node.js / Browser
 
@@ -75,6 +84,13 @@ npm install ruvector
 
 # Or try instantly
 npx ruvector
+```
+
+### PostgreSQL Extension Only
+
+```bash
+# Lighter image with just PostgreSQL extension
+docker run -d -p 5432:5432 ruvnet/ruvector-postgres:latest
 ```
 
 

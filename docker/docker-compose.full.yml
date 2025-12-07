@@ -1,0 +1,455 @@
+version: '3.8'
+
+# RuVector Full Stack Deployment
+# Orchestrates all RuVector components with proper dependencies and health checks
+
+services:
+  # PostgreSQL Database with RuVector Extension
+  postgres:
+    image: ruvnet/ruvector:latest
+    container_name: ruvector-postgres
+    hostname: ruvector-postgres
+    environment:
+      POSTGRES_USER: ruvector
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ruvector_pass}
+      POSTGRES_DB: ruvector
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - ruvector-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ruvector -d ruvector"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Core Vector Database Engine (Internal Only)
+  ruvector-core:
+    image: ruvnet/ruvector-core:latest
+    container_name: ruvector-core
+    hostname: ruvector-core
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      VECTOR_DIMENSION: ${VECTOR_DIMENSION:-1536}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - core-data:/var/lib/ruvector
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /var/lib/ruvector/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # REST API Server
+  server:
+    image: ruvnet/ruvector-server:latest
+    container_name: ruvector-server
+    hostname: ruvector-server
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      RUST_LOG: ${RUST_LOG:-info}
+      CORE_SERVICE_URL: http://ruvector-core:8081
+      GNN_SERVICE_URL: http://ruvector-gnn:8082
+      GRAPH_SERVICE_URL: http://ruvector-graph:7687
+      ATTENTION_SERVICE_URL: http://ruvector-attention:8083
+      CLUSTER_SERVICE_URL: http://ruvector-cluster:8084
+      SONA_SERVICE_URL: http://ruvector-sona:8085
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ruvector-core:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - server-logs:/var/log/ruvector
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # CLI and MCP Server
+  cli:
+    image: ruvnet/ruvector-cli:latest
+    container_name: ruvector-cli
+    hostname: ruvector-cli
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      SERVER_URL: http://server:8080
+      MCP_PORT: ${MCP_PORT:-3000}
+    ports:
+      - "${MCP_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - cli-data:/root/.ruvector
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Graph Neural Network Engine
+  ruvector-gnn:
+    image: ruvnet/ruvector-gnn:latest
+    container_name: ruvector-gnn
+    hostname: ruvector-gnn
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      GNN_PORT: ${GNN_PORT:-8082}
+      MODEL_PATH: /var/lib/ruvector/models
+      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-}
+    ports:
+      - "${GNN_PORT:-8082}:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ruvector-core:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - gnn-models:/var/lib/ruvector/models
+      - gnn-cache:/var/lib/ruvector/cache
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # Graph Database
+  ruvector-graph:
+    image: ruvnet/ruvector-graph:latest
+    container_name: ruvector-graph
+    hostname: ruvector-graph
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      BOLT_PORT: ${BOLT_PORT:-7687}
+      HTTP_PORT: ${HTTP_PORT:-7474}
+      NEO4J_AUTH: ${NEO4J_AUTH:-none}
+    ports:
+      - "${BOLT_PORT:-7687}:7687"
+      - "${HTTP_PORT:-7474}:7474"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ruvector-core:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - graph-data:/var/lib/ruvector/graph
+      - graph-logs:/var/log/ruvector/graph
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7474/db/data/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "15m"
+        max-file: "5"
+
+  # Attention Mechanism Engine
+  ruvector-attention:
+    image: ruvnet/ruvector-attention:latest
+    container_name: ruvector-attention
+    hostname: ruvector-attention
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      ATTENTION_PORT: ${ATTENTION_PORT:-8083}
+      ATTENTION_HEADS: ${ATTENTION_HEADS:-8}
+      ATTENTION_LAYERS: ${ATTENTION_LAYERS:-6}
+    ports:
+      - "${ATTENTION_PORT:-8083}:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ruvector-core:
+        condition: service_healthy
+      ruvector-gnn:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - attention-cache:/var/lib/ruvector/attention
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 35s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 3G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "15m"
+        max-file: "5"
+
+  # Cluster Coordinator
+  ruvector-cluster:
+    image: ruvnet/ruvector-cluster:latest
+    container_name: ruvector-cluster
+    hostname: ruvector-cluster
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      CLUSTER_PORT: ${CLUSTER_PORT:-8084}
+      CLUSTER_MODE: ${CLUSTER_MODE:-standalone}
+      CLUSTER_NODE_ID: ${CLUSTER_NODE_ID:-node-1}
+      RAFT_PORT: ${RAFT_PORT:-9000}
+    ports:
+      - "${CLUSTER_PORT:-8084}:8084"
+      - "${RAFT_PORT:-9000}:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ruvector-core:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - cluster-data:/var/lib/ruvector/cluster
+      - cluster-logs:/var/log/ruvector/cluster
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # SONA Self-Learning Module
+  ruvector-sona:
+    image: ruvnet/ruvector-sona:latest
+    container_name: ruvector-sona
+    hostname: ruvector-sona
+    environment:
+      DATABASE_URL: postgresql://ruvector:${POSTGRES_PASSWORD:-ruvector_pass}@postgres:5432/ruvector
+      RUST_LOG: ${RUST_LOG:-info}
+      SONA_PORT: ${SONA_PORT:-8085}
+      LEARNING_RATE: ${LEARNING_RATE:-0.001}
+      TRAINING_ENABLED: ${TRAINING_ENABLED:-true}
+      GNN_SERVICE_URL: http://ruvector-gnn:8082
+      ATTENTION_SERVICE_URL: http://ruvector-attention:8083
+    ports:
+      - "${SONA_PORT:-8085}:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ruvector-core:
+        condition: service_healthy
+      ruvector-gnn:
+        condition: service_healthy
+      ruvector-attention:
+        condition: service_healthy
+    networks:
+      - ruvector-net
+    volumes:
+      - sona-models:/var/lib/ruvector/sona/models
+      - sona-checkpoints:/var/lib/ruvector/sona/checkpoints
+      - sona-logs:/var/log/ruvector/sona
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+# Named Volumes for Data Persistence
+volumes:
+  pg-data:
+    driver: local
+    name: ruvector-pg-data
+  core-data:
+    driver: local
+    name: ruvector-core-data
+  server-logs:
+    driver: local
+    name: ruvector-server-logs
+  cli-data:
+    driver: local
+    name: ruvector-cli-data
+  gnn-models:
+    driver: local
+    name: ruvector-gnn-models
+  gnn-cache:
+    driver: local
+    name: ruvector-gnn-cache
+  graph-data:
+    driver: local
+    name: ruvector-graph-data
+  graph-logs:
+    driver: local
+    name: ruvector-graph-logs
+  attention-cache:
+    driver: local
+    name: ruvector-attention-cache
+  cluster-data:
+    driver: local
+    name: ruvector-cluster-data
+  cluster-logs:
+    driver: local
+    name: ruvector-cluster-logs
+  sona-models:
+    driver: local
+    name: ruvector-sona-models
+  sona-checkpoints:
+    driver: local
+    name: ruvector-sona-checkpoints
+  sona-logs:
+    driver: local
+    name: ruvector-sona-logs
+
+# Isolated Network
+networks:
+  ruvector-net:
+    driver: bridge
+    name: ruvector-network
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

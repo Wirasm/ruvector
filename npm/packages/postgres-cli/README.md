@@ -6,6 +6,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14--17-blue.svg)](https://www.postgresql.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-available-blue.svg)](https://hub.docker.com/r/ruvnet/ruvector-postgres)
 
 **The most advanced AI vector database CLI for PostgreSQL.** A drop-in pgvector replacement with 53+ SQL functions, 39 attention mechanisms, GNN layers, hyperbolic embeddings, and self-learning capabilities.
 
@@ -68,6 +69,19 @@ npx @ruvector/postgres-cli install \
   --user myuser \
   --password mypass \
   --database mydb
+```
+
+**Direct Docker Hub Usage** (without CLI):
+
+```bash
+# Pull and run from Docker Hub
+docker run -d --name ruvector-pg \
+  -e POSTGRES_PASSWORD=secret \
+  -p 5432:5432 \
+  ruvnet/ruvector-postgres:latest
+
+# Connect with psql
+docker exec -it ruvector-pg psql -U postgres
 ```
 
 ### Option 2: Native Installation (No Docker Required)

@@ -70,6 +70,10 @@ harness = false
 name = "comprehensive_bench"
 harness = false
 
+[[bench]]
+name = "real_benchmark"
+harness = false
+
 [features]
 default = ["simd", "storage", "hnsw"]
 simd = []

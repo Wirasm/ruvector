@@ -656,10 +656,22 @@ impl AgenticDB {
 
     // ============ Helper Methods ============
 
-    /// Generate text embedding (placeholder - would use actual embedding model)
+    /// Generate text embedding from text.
+    ///
+    /// # ⚠️ WARNING: PLACEHOLDER IMPLEMENTATION
+    ///
+    /// This uses a simple hash-based embedding that does NOT understand
+    /// semantic meaning. Text similarity will be based on character overlap,
+    /// not actual meaning.
+    ///
+    /// For real semantic search, integrate an actual embedding model:
+    /// - `sentence-transformers` via Python bindings
+    /// - `candle` for native Rust inference
+    /// - ONNX Runtime for cross-platform models
+    /// - OpenAI/Anthropic embedding APIs
     fn generate_text_embedding(&self, text: &str) -> Result<Vec<f32>> {
-        // Simple hash-based embedding for demonstration
-        // In production, use actual embedding models like sentence-transformers
+        // ⚠️ PLACEHOLDER: Hash-based embedding - NOT semantic
+        // This is for demonstration and testing only
         let mut embedding = vec![0.0; self.dimensions];
         let bytes = text.as_bytes();
 

@@ -2,13 +2,24 @@
 //!
 //! High-performance Rust-native vector database with HNSW indexing and SIMD-optimized operations.
 //!
-//! ## Features
+//! ## Working Features (Tested & Benchmarked)
 //!
-//! - **HNSW Indexing**: O(log n) search with 95%+ recall
-//! - **SIMD Optimizations**: 4-16x faster distance calculations
-//! - **Quantization**: 4-32x memory compression
-//! - **Zero-copy Memory**: Memory-mapped vectors for instant loading
-//! - **AgenticDB Compatible**: Drop-in replacement with 10-100x speedup
+//! - **HNSW Indexing**: Approximate nearest neighbor search with O(log n) complexity
+//! - **SIMD Distance**: SimSIMD-powered distance calculations (~16M ops/sec for 512-dim)
+//! - **Quantization**: Scalar (4x) and binary (32x) compression with distance support
+//! - **Persistence**: REDB-based storage with config persistence
+//! - **Search**: ~2.5K queries/sec on 10K vectors (benchmarked)
+//!
+//! ## Experimental/Incomplete Features
+//!
+//! - **AgenticDB**: Uses placeholder hash-based embeddings (NOT semantic)
+//!   - Replace `generate_text_embedding` with real model for production use
+//! - **Advanced Features**: Conformal prediction, hybrid search - functional but less tested
+//!
+//! ## What This Is NOT
+//!
+//! - This is NOT a complete RAG solution - you need external embedding models
+//! - Examples use mock embeddings for demonstration only
 
 #![warn(missing_docs)]
 #![warn(clippy::all)]

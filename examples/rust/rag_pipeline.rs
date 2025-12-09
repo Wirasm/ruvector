@@ -1,6 +1,13 @@
 //! RAG (Retrieval Augmented Generation) Pipeline Example
 //!
-//! Demonstrates building a complete RAG system with Ruvector
+//! Demonstrates building a complete RAG system with Ruvector.
+//!
+//! ⚠️ NOTE: This example uses MOCK embeddings for demonstration.
+//! In production, replace `mock_embedding()` with a real embedding model:
+//! - `sentence-transformers` via Python bindings
+//! - `candle` for native Rust inference
+//! - ONNX Runtime for cross-platform models
+//! - OpenAI/Anthropic embedding APIs
 
 use ruvector_core::{VectorDB, VectorEntry, SearchQuery, DbOptions, Result};
 use std::collections::HashMap;
@@ -114,6 +121,9 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// ⚠️ MOCK EMBEDDING - NOT SEMANTIC
+/// This produces deterministic vectors based on seed value.
+/// Replace with actual embedding model for real semantic search.
 fn mock_embedding(dims: usize, seed: f32) -> Vec<f32> {
     (0..dims)
         .map(|i| (seed + i as f32 * 0.001).sin())

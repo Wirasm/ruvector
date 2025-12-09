@@ -1,6 +1,6 @@
 {
   "name": "@ruvector/wasm",
-  "version": "0.1.1",
+  "version": "0.1.22",
   "description": "WebAssembly bindings for RuVector vector database",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

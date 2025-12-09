@@ -1,6 +1,6 @@
 {
   "name": "@ruvector/router",
-  "version": "0.1.15",
+  "version": "0.1.22",
   "description": "Semantic router for AI agents - vector-based intent matching with HNSW indexing and SIMD acceleration",
   "main": "index.js",
   "types": "index.d.ts",

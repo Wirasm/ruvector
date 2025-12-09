@@ -1,6 +1,6 @@
 {
   "name": "@ruvector/cli",
-  "version": "0.1.0",
+  "version": "0.1.22",
   "description": "Command-line interface for RuVector vector database",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
